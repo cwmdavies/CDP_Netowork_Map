@@ -1,0 +1,4 @@
+Progress Bar
+Ongoing progress on how many switches is has done out of how many its found
+Site name field for the gui
+option to select where to save the file

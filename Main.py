@@ -25,7 +25,7 @@ import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import ctypes
 import pandas as pd
 from openpyxl import load_workbook
@@ -42,10 +42,16 @@ timeout = 15
 # -----------------------------------------------------------
 # --------------- TKinter Configuration Start ---------------
 
+
+def get_folder_path():
+    folder_selected = filedialog.askdirectory()
+    FolderPath_var.set(folder_selected)
+
+
 # root window
 root = tk.Tk()
-root.eval('tk::PlaceWindow . center')
-root.geometry("300x500")
+# root.eval('tk::PlaceWindow . center')
+root.geometry("300x600")
 root.resizable(False, False)
 root.title('Required Details')
 
@@ -56,13 +62,21 @@ IP_Address1_var = tk.StringVar()
 IP_Address2_var = tk.StringVar()
 Debugging_var = tk.StringVar()
 JumpServer_var = tk.StringVar()
+SiteName_var = tk.StringVar()
+FolderPath_var = tk.StringVar()
 
 # Site details frame
 Site_details = ttk.Frame(root)
 Site_details.pack(padx=10, pady=10, fill='x', expand=True)
 
+# site name
+Site_Name_label = ttk.Label(Site_details, text="\nSite_Name:")
+Site_Name_label.pack(fill='x', expand=True)
+Site_Name_entry = ttk.Entry(Site_details, textvariable=SiteName_var)
+Site_Name_entry.pack(fill='x', expand=True)
+
 # Username
-Username_label = ttk.Label(Site_details, text="Username:")
+Username_label = ttk.Label(Site_details, text="\nUsername:")
 Username_label.pack(fill='x', expand=True)
 Username_entry = ttk.Entry(Site_details, textvariable=Username_var)
 Username_entry.pack(fill='x', expand=True)
@@ -85,6 +99,15 @@ IP_Address2_label = ttk.Label(Site_details, text="\nCore Switch 2 (Optional):")
 IP_Address2_label.pack(fill='x', expand=True)
 IP_Address2_entry = ttk.Entry(Site_details, textvariable=IP_Address2_var)
 IP_Address2_entry.pack(fill='x', expand=True)
+
+# Folder Path Save Directory
+FolderPath_label = ttk.Label(Site_details, text="\nResults file location")
+FolderPath_label.pack(fill='x', expand=True)
+button = ttk.Button(Site_details, text="Browse Folder", command=get_folder_path)
+button.pack(fill='x', expand=True)
+FolderPath_entry = ttk.Entry(Site_details, textvariable=FolderPath_var)
+FolderPath_entry.configure(state='disabled')
+FolderPath_entry.pack(fill='x', expand=True)
 
 # Debugging Dropdown Box
 Debugging_var.set("Off")
@@ -118,6 +141,8 @@ username = Username_var.get()
 password = password_var.get()
 IPAddr1 = IP_Address1_var.get()
 IPAddr2 = IP_Address2_var.get()
+SiteName = SiteName_var.get()
+FolderPath = FolderPath_var.get()
 
 if Debugging_var.get() == "On":
     Debugging = 1
@@ -286,6 +311,7 @@ def get_hostname(ip):
 
 
 def main():
+    global FolderPath
     # Start timer.
     start = time.perf_counter()
 
@@ -323,9 +349,13 @@ def main():
                                                          "SOFTWARE_VERSION",
                                                          "CAPABILITIES"
                                                          ])
-    filepath = '../CDP_Neighbors_Detail.xlsx'
-    array.to_excel(filepath, index=False)
 
+    if FolderPath == "":
+        filepath = f"../{SiteName}.xlsx"
+    else:
+        filepath = f"{FolderPath}/{SiteName}.xlsx"
+
+    array.to_excel(filepath, index=False)
     workbook = load_workbook(filename=filepath)
     ws = workbook["Sheet1"]
     ws.auto_filter.ref = ws.dimensions

@@ -373,7 +373,7 @@ def main():
     # End timer.
     end = time.perf_counter()
     log.info(f"Script finished in {end - start:0.4f} seconds")
-    ctypes.windll.user32.MessageBoxW(0, "Script Complete", "Info", 0x40000)
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\nFile save in\n{FolderPath}", "Info", 0x40000)
 
 
 if __name__ == "__main__":

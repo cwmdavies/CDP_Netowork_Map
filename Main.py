@@ -45,12 +45,27 @@ def get_folder_path():
     FolderPath_var.set(folder_selected)
 
 
+def quit_application():
+    sys.exit()
+
+
+def check_empty():
+    if (Username_var.get() == "" and
+            password_var.get() == "" and
+            IP_Address1_var.get() == "" and
+            SiteName_var.get() == ""):
+        ctypes.windll.user32.MessageBoxW(0, f"Missing parameters:\nCheck your input fields and try again",
+                                         "Error", 0x40000)
+    else:
+        root.destroy()
+        pass
+
+
 # root window
 root = tk.Tk()
-# root.eval('tk::PlaceWindow . center')
-root.geometry("300x600")
-root.resizable(False, False)
+root.resizable(False, True)
 root.title('Required Details')
+root.protocol('WM_DELETE_WINDOW', quit_application)
 
 # store entries
 Username_var = tk.StringVar()
@@ -67,38 +82,38 @@ Site_details = ttk.Frame(root)
 Site_details.pack(padx=10, pady=10, fill='x', expand=True)
 
 # site name
-Site_Name_label = ttk.Label(Site_details, text="\nSite_Name:")
+Site_Name_label = ttk.Label(Site_details, text="\nSite_Name: (Required)")
 Site_Name_label.pack(fill='x', expand=True)
 Site_Name_entry = ttk.Entry(Site_details, textvariable=SiteName_var)
 Site_Name_entry.pack(fill='x', expand=True)
 
 # Username
-Username_label = ttk.Label(Site_details, text="\nUsername:")
+Username_label = ttk.Label(Site_details, text="\nUsername: (Required)")
 Username_label.pack(fill='x', expand=True)
 Username_entry = ttk.Entry(Site_details, textvariable=Username_var)
 Username_entry.pack(fill='x', expand=True)
 Username_entry.focus()
 
 # Password
-password_label = ttk.Label(Site_details, text="\nPassword:")
+password_label = ttk.Label(Site_details, text="\nPassword: (Required)")
 password_label.pack(fill='x', expand=True)
 password_entry = ttk.Entry(Site_details, textvariable=password_var, show="*")
 password_entry.pack(fill='x', expand=True)
 
 # ip Address 1
-IP_Address1_label = ttk.Label(Site_details, text="\nCore Switch 1:")
+IP_Address1_label = ttk.Label(Site_details, text="\nCore Switch 1: (Required)")
 IP_Address1_label.pack(fill='x', expand=True)
 IP_Address1_entry = ttk.Entry(Site_details, textvariable=IP_Address1_var)
 IP_Address1_entry.pack(fill='x', expand=True)
 
 # ip Address 2
-IP_Address2_label = ttk.Label(Site_details, text="\nCore Switch 2 (Optional):")
+IP_Address2_label = ttk.Label(Site_details, text="\nCore Switch 2: (Optional)")
 IP_Address2_label.pack(fill='x', expand=True)
 IP_Address2_entry = ttk.Entry(Site_details, textvariable=IP_Address2_var)
 IP_Address2_entry.pack(fill='x', expand=True)
 
 # Folder Path Save Directory
-FolderPath_label = ttk.Label(Site_details, text="\nResults file location")
+FolderPath_label = ttk.Label(Site_details, text="\nResults file location: (Optional)")
 FolderPath_label.pack(fill='x', expand=True)
 button = ttk.Button(Site_details, text="Browse Folder", command=get_folder_path)
 button.pack(fill='x', expand=True)
@@ -106,30 +121,31 @@ FolderPath_entry = ttk.Entry(Site_details, textvariable=FolderPath_var)
 FolderPath_entry.configure(state='disabled')
 FolderPath_entry.pack(fill='x', expand=True)
 
-# Debugging Dropdown Box
-Debugging_var.set("Off")
-Debugging_label = ttk.Label(Site_details, text="\nDebugging")
-Debugging_label.pack(anchor="w")
-Debugging = ttk.Combobox(Site_details, values=["Off", "On"], state="readonly", textvariable=Debugging_var, )
-Debugging.current(0)
-Debugging.pack(anchor="w")
-
 # Dropdown Box
 JumpServer_var.set("10.251.131.6")
-JumpServer_label = ttk.Label(Site_details, text="\nJumper Server")
-JumpServer_label.pack(anchor="w")
+JumpServer_label = ttk.Label(Site_details, text="\nJumper Server:")
+JumpServer_label.pack(fill='x', expand=True)
 JumpServer = ttk.Combobox(Site_details,
                           values=["MMFTH1V-MGMTS02", "AR31NOC"],
                           state="readonly", textvariable=JumpServer_var,
                           )
 JumpServer.current(0)
-JumpServer.pack(anchor="w")
+JumpServer.pack(fill='x', expand=True)
 
+# Debugging Dropdown Box
+Debugging_var.set("Off")
+Debugging_label = ttk.Label(Site_details, text="\nDebugging:")
+Debugging_label.pack(fill='x', expand=True)
+Debugging = ttk.Combobox(Site_details, values=["Off", "On"], state="readonly", textvariable=Debugging_var, )
+Debugging.current(0)
+Debugging.pack(fill='x', expand=True)
 
 # Submit button
-Submit_button = ttk.Button(Site_details, text="Submit", command=root.destroy)
-Submit_button.pack(fill='x', pady=30)
+Submit_button = ttk.Button(Site_details, text="Submit", command=check_empty, width=50)
+Submit_button.pack(side="left", fill='x', pady=30)
 
+cancel_button = ttk.Button(Site_details, text="Cancel", command=quit_application, width=50)
+cancel_button.pack(side="right",  fill='x', pady=30)
 
 root.attributes('-topmost', True)
 root.mainloop()

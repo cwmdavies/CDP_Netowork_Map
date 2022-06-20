@@ -1,10 +1,7 @@
-###############################################
-#            Under Construction               #
-#               Design Phase                  #
-#                                             #
-###############################################
-
 """
+
+
+
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses

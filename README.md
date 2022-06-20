@@ -9,3 +9,4 @@ more IP Addresses to connect to. The information is then converted to a numpy ar
 
 Threading is used to connect to multiple switches at a time.
 Each IP Address is checked to ensure validity.
+

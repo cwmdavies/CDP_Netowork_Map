@@ -1,4 +1,4 @@
 Progress Bar
-Ongoing progress on how many switches is has done out of how many its found
-switch to using a package for reusable code
+Ongoing progress on how many switches it has parsed out of how many it has found.
+Package reuseable code into packages
 Rewrite Tkinter code as a class

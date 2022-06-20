@@ -11,3 +11,11 @@ Threading is used to connect to multiple switches at a time.
 
 Each IP Address is checked to ensure validity.
 
+The following information is retrieved from the CDP output and recorded in an excel sheet for each switch that is logged into.
+ - LOCAL_PORT
+ - Required DESTINATION_HOST
+ - REMOTE_PORT
+ - MANAGEMENT_IP
+ - PLATFORM
+ - SOFTWARE_VERSION
+ - CAPABILITIES

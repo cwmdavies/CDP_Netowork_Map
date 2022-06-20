@@ -8,4 +8,4 @@ is connected to, up to 10 at a time, to retrieve the same information. This recu
 more IP Addresses to connect to. The information is then converted to a numpy array and saved to an Excel spreadsheet.
 
 Threading is used to connect to multiple switches at a time.
-Each IP Address is checked to ensure each IP Address is valid.
+Each IP Address is checked to ensure validity.

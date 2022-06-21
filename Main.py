@@ -50,12 +50,18 @@ def quit_application():
 
 
 def check_empty():
-    if (Username_var.get() == "" and
-            password_var.get() == "" and
-            IP_Address1_var.get() == "" and
-            SiteName_var.get() == ""):
-        ctypes.windll.user32.MessageBoxW(0, f"Missing parameters:\nCheck your input fields and try again",
-                                         "Error", 0x40000)
+    if Username_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+                                         0x40000)
+    elif password_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+                                         0x40000)
+    elif IP_Address1_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+                                         0x40000)
+    elif SiteName_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+                                         0x40000)
     else:
         root.destroy()
         pass

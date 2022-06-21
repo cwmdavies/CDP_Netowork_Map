@@ -70,7 +70,7 @@ def check_empty():
 # root window
 root = tk.Tk()
 root.resizable(False, True)
-root.title('Required Details')
+root.title('CDP Network Map')
 root.protocol('WM_DELETE_WINDOW', quit_application)
 
 # store entries

@@ -1,6 +1,9 @@
 """
+Author Details:
+Name: Chris Davies
+Email: chris.davies@weavermanor.co.uk
 
-
+Tested on Python 3.8 to 3.10
 
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
@@ -245,7 +248,7 @@ def jump_session(ip):
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = (ip, 22)
+        destination_address = ip
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout,)
         target = paramiko.SSHClient()

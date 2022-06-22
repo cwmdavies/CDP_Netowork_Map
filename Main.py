@@ -21,6 +21,7 @@ import textfsm
 import ipaddress
 import logging
 import sys
+import os
 import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
@@ -34,7 +35,6 @@ local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting f
 IP_LIST = []
 Hostnames_List = []
 collection_of_results = []
-filename = "CDP_Neighbors_Detail.xlsx"
 index = 2
 ThreadLock = Lock()
 timeout = 15
@@ -54,16 +54,20 @@ def quit_application():
 
 def check_empty():
     if Username_var.get() == "":
-        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
                                          0x40000)
     elif password_var.get() == "":
-        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
                                          0x40000)
     elif IP_Address1_var.get() == "":
-        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
                                          0x40000)
     elif SiteName_var.get() == "":
-        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\nPlease check and try again!", "Error",
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
                                          0x40000)
     else:
         root.destroy()
@@ -184,7 +188,7 @@ elif JumpServer_var.get() == "MMFTH1V-MGMTS02":
 # --------------- Logging Configuration Start ---------------
 
 # Log file location
-logfile = '../debug.log'
+logfile = 'debug.log'
 # Define the log format
 log_format = (
     '[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
@@ -248,7 +252,7 @@ def jump_session(ip):
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = ip
+        destination_address = (ip, 22)
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout,)
         target = paramiko.SSHClient()
@@ -373,9 +377,9 @@ def main():
                                                          ])
 
     if FolderPath == "":
-        filepath = f"../{SiteName}.xlsx"
+        filepath = f"{os.getcwd()}\\{SiteName}_CDP Switch Audit.xlsx"
     else:
-        filepath = f"{FolderPath}/{SiteName}.xlsx"
+        filepath = f"{FolderPath}/{SiteName}_CDP Switch Audit.xlsx"
 
     array.to_excel(filepath, index=False)
     workbook = load_workbook(filename=filepath)
@@ -395,7 +399,7 @@ def main():
     # End timer.
     end = time.perf_counter()
     log.info(f"Script finished in {end - start:0.4f} seconds")
-    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\nFile save in\n{FolderPath}", "Info", 0x40000)
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
 
 
 if __name__ == "__main__":

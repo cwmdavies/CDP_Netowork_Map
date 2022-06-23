@@ -76,7 +76,7 @@ def check_empty():
 
 # root window
 root = tk.Tk()
-root.resizable(False, True)
+root.resizable(True, True)
 root.title('CDP Network Map')
 root.protocol('WM_DELETE_WINDOW', quit_application)
 
@@ -155,10 +155,13 @@ Debugging.pack(fill='x', expand=True)
 
 # Submit button
 Submit_button = ttk.Button(Site_details, text="Submit", command=check_empty, width=50)
-Submit_button.pack(side="left", fill='x', pady=30)
+Submit_button.pack(fill='x', pady=30)
 
 cancel_button = ttk.Button(Site_details, text="Cancel", command=quit_application, width=50)
-cancel_button.pack(side="right",  fill='x', pady=30)
+cancel_button.pack(fill='x', pady=30)
+
+pb = ttk.Progressbar(Site_details, orient='horizontal', mode='indeterminate', length=280)
+pb.pack(fill='x', pady=30)
 
 root.attributes('-topmost', True)
 root.mainloop()
@@ -169,16 +172,7 @@ IPAddr1 = IP_Address1_var.get()
 IPAddr2 = IP_Address2_var.get()
 SiteName = SiteName_var.get()
 FolderPath = FolderPath_var.get()
-
-if Debugging_var.get() == "On":
-    Debugging = 1
-elif Debugging_var.get() == "Off":
-    Debugging = 0
-
-if JumpServer_var.get() == "AR31NOC":
-    jump_server = "10.251.6.31"
-elif JumpServer_var.get() == "MMFTH1V-MGMTS02":
-    jump_server = "10.251.131.6"
+jump_server = "10.251.6.31" if JumpServer_var.get() == "AR31NOC" else "10.251.131.6"
 
 # ---------------- TKinter Configuration End ----------------
 # -----------------------------------------------------------
@@ -194,7 +188,7 @@ log_format = (
     '[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
 
 # Define basic configuration
-if Debugging == 0:
+if Debugging == "Off":
     logging.basicConfig(
         # Define logging level
         level=logging.WARN,
@@ -206,7 +200,7 @@ if Debugging == 0:
             logging.StreamHandler(sys.stdout),
         ]
     )
-elif Debugging == 1:
+elif Debugging == "On":
     logging.basicConfig(
         # Define logging level
         level=logging.DEBUG,

@@ -31,6 +31,7 @@ import ctypes
 import pandas as pd
 from openpyxl import load_workbook
 
+
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
 Hostnames_List = []
@@ -70,6 +71,17 @@ def check_empty():
                                             f"Please check and try again!", "Error",
                                          0x40000)
     else:
+        Site_Name_entry.config(state="disabled")
+        Username_entry.config(state="disabled")
+        password_entry.config(state="disabled")
+        IP_Address1_entry.config(state="disabled")
+        IP_Address2_entry.config(state="disabled")
+        FolderPath_entry.config(state="disabled")
+        button.config(state="disabled")
+        JumpServer.config(state="disabled")
+        Debugging.config(state="disabled")
+        Submit_button.config(state="disabled")
+        # var.set("Running Script: This may take a couple of minutes!")
         root.destroy()
         pass
 
@@ -79,6 +91,7 @@ root = tk.Tk()
 root.resizable(True, True)
 root.title('CDP Network Map')
 root.protocol('WM_DELETE_WINDOW', quit_application)
+root.attributes('-topmost', True)
 
 # store entries
 Username_var = tk.StringVar()
@@ -89,6 +102,8 @@ Debugging_var = tk.StringVar()
 JumpServer_var = tk.StringVar()
 SiteName_var = tk.StringVar()
 FolderPath_var = tk.StringVar()
+# var = tk.StringVar()
+# var.set("Please fill in all the required fields!")
 
 # Site details frame
 Site_details = ttk.Frame(root)
@@ -151,20 +166,17 @@ Debugging_label = ttk.Label(Site_details, text="\nDebugging:")
 Debugging_label.pack(fill='x', expand=True)
 Debugging = ttk.Combobox(Site_details, values=["Off", "On"], state="readonly", textvariable=Debugging_var, )
 Debugging.current(0)
-Debugging.pack(fill='x', expand=True)
+Debugging.pack(fill='x', expand=True, pady=(0, 30))
 
 # Submit button
 Submit_button = ttk.Button(Site_details, text="Submit", command=check_empty, width=50)
-Submit_button.pack(fill='x', pady=30)
+Submit_button.pack(fill='x')
 
 cancel_button = ttk.Button(Site_details, text="Cancel", command=quit_application, width=50)
-cancel_button.pack(fill='x', pady=30)
+cancel_button.pack(fill='x', pady=(0, 30))
 
-pb = ttk.Progressbar(Site_details, orient='horizontal', mode='indeterminate', length=280)
-pb.pack(fill='x', pady=30)
-
-root.attributes('-topmost', True)
-root.mainloop()
+# progress_label = ttk.Label(Site_details, textvariable=var)
+# progress_label.pack(fill='x', expand=True, pady=(0, 30))
 
 username = Username_var.get()
 password = password_var.get()
@@ -332,9 +344,10 @@ def get_hostname(ip):
 
 def main():
     global FolderPath
+
+    root.mainloop()
     # Start timer.
     start = time.perf_counter()
-
     # Define amount of threads.
     thread_count = 10
     pool = ThreadPool(thread_count)
@@ -393,7 +406,8 @@ def main():
     # End timer.
     end = time.perf_counter()
     log.info(f"Script finished in {end - start:0.4f} seconds")
-    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"
+                                        f"File saved in:\n{filepath}", "Info", 0x40000)
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ Threading is used to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
 """
 
-from MyPackage import MyGui
+import MyPackage.MyGui as MyGui
 import paramiko
 import textfsm
 import ipaddress
@@ -26,8 +26,7 @@ import os
 import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
-import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import Tk
 import ctypes
 import pandas as pd
 from openpyxl import load_workbook
@@ -40,8 +39,17 @@ index = 2
 ThreadLock = Lock()
 timeout = 15
 
-root = MyGui.Tk()
+root = Tk()
 my_gui = MyGui.MyGUIClass(root)
+
+SiteName = my_gui.SiteName_var
+Debugging = my_gui.Debugging_var
+jump_server = my_gui.JumpServer_var
+username = my_gui.Username_var
+password = my_gui.password_var
+IPAddr1 = my_gui.IP_Address1_var
+IPAddr2 = my_gui.IP_Address2_var
+FolderPath = my_gui.FolderPath_var
 
 # -----------------------------------------------------------
 # --------------- Logging Configuration Start ---------------
@@ -65,7 +73,7 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
-elif Debugging == "On":
+elif my_gui.Debugging == "On":
     logging.basicConfig(
         # Define logging level
         level=logging.DEBUG,
@@ -199,7 +207,7 @@ def main():
     global FolderPath
     # Start timer.
     start = time.perf_counter()
-
+    root.mainloop()
     # Define amount of threads.
     thread_count = 10
     pool = ThreadPool(thread_count)

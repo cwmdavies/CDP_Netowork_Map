@@ -1,6 +1,7 @@
-from tkinter import Tk, ttk, Label, Button, Entry, StringVar, filedialog
+from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo
 import sys
+import ctypes
 
 
 class MyGUIClass:
@@ -76,7 +77,7 @@ class MyGUIClass:
         self.Debugging.current(0)
         self.Debugging.pack(fill='x', expand=True, pady=(0, 20))
 
-        self.submit_button = Button(self.Site_details, text="Submit", command=self.greet, width=25)
+        self.submit_button = Button(self.Site_details, text="Submit", command=self.check_empty, width=25)
         self.submit_button.pack(side="left", fill="x",)
 
         self.cancel_button = Button(self.Site_details, text="Cancel", command=self.quite_script, width=25)
@@ -90,11 +91,31 @@ class MyGUIClass:
     def quite_script():
         sys.exit()
 
+    def check_empty(self):
+        if self.Username_var.get() == "":
+            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                                f"Please check and try again!", "Error",
+                                             0x40000)
+        elif self.password_var.get() == "":
+            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                                f"Please check and try again!", "Error",
+                                             0x40000)
+        elif self.IP_Address1_var.get() == "":
+            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                                f"Please check and try again!", "Error",
+                                             0x40000)
+        elif self.SiteName_var.get() == "":
+            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                                f"Please check and try again!", "Error",
+                                             0x40000)
+        else:
+            pass
+
     def get_folder_path(self):
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
 
 
 # root = Tk()
-# my_gui = MyFirstGUI(root)
+# my_gui = MyGUIClass(root)
 # root.mainloop()

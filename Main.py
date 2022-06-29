@@ -307,10 +307,11 @@ def main():
     ws.column_dimensions['I'].width = "30"
     workbook.save(filename=filepath)
 
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
+
     # End timer.
     end = time.perf_counter()
     log.info(f"Script finished in {end - start:0.4f} seconds")
-    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
 
 
 if __name__ == "__main__":

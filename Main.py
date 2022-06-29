@@ -2,21 +2,17 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-
 Tested on Python 3.8 to 3.10
-
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses
 of those that have been processed so no switch is connected too more than once. Each IP Address in the list
 is connected to, up to 10 at a time, to retrieve the same information. This recursion goes on until there are no
 more IP Addresses to connect to. The information is then converted to a numpy array and saved to an Excel spreadsheet.
-
 Threading is used to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
 """
 
-import MyPackage.MyGui as MyGui
 import paramiko
 import textfsm
 import ipaddress
@@ -26,10 +22,12 @@ import os
 import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
-from tkinter import Tk
+import tkinter as tk
+from tkinter import ttk, filedialog
 import ctypes
 import pandas as pd
 from openpyxl import load_workbook
+
 
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
@@ -39,17 +37,155 @@ index = 2
 ThreadLock = Lock()
 timeout = 15
 
-root = Tk()
-my_gui = MyGui.MyGUIClass(root)
+# -----------------------------------------------------------
+# --------------- TKinter Configuration Start ---------------
 
-SiteName = my_gui.SiteName_var
-Debugging = my_gui.Debugging_var
-jump_server = my_gui.JumpServer_var
-username = my_gui.Username_var
-password = my_gui.password_var
-IPAddr1 = my_gui.IP_Address1_var
-IPAddr2 = my_gui.IP_Address2_var
-FolderPath = my_gui.FolderPath_var
+
+def get_folder_path():
+    folder_selected = filedialog.askdirectory()
+    FolderPath_var.set(folder_selected)
+
+
+def quit_application():
+    sys.exit()
+
+
+def check_empty():
+    if Username_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
+                                         0x40000)
+    elif password_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
+                                         0x40000)
+    elif IP_Address1_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
+                                         0x40000)
+    elif SiteName_var.get() == "":
+        ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
+                                            f"Please check and try again!", "Error",
+                                         0x40000)
+    else:
+        Site_Name_entry.config(state="disabled")
+        Username_entry.config(state="disabled")
+        password_entry.config(state="disabled")
+        IP_Address1_entry.config(state="disabled")
+        IP_Address2_entry.config(state="disabled")
+        FolderPath_entry.config(state="disabled")
+        button.config(state="disabled")
+        JumpServer.config(state="disabled")
+        Debugging.config(state="disabled")
+        Submit_button.config(state="disabled")
+        # var.set("Running Script: This may take a couple of minutes!")
+        root.destroy()
+        pass
+
+
+# root window
+root = tk.Tk()
+root.resizable(True, True)
+root.title('CDP Network Map')
+root.protocol('WM_DELETE_WINDOW', quit_application)
+root.attributes('-topmost', True)
+
+# store entries
+Username_var = tk.StringVar()
+password_var = tk.StringVar()
+IP_Address1_var = tk.StringVar()
+IP_Address2_var = tk.StringVar()
+Debugging_var = tk.StringVar()
+JumpServer_var = tk.StringVar()
+SiteName_var = tk.StringVar()
+FolderPath_var = tk.StringVar()
+# var = tk.StringVar()
+# var.set("Please fill in all the required fields!")
+
+# Site details frame
+Site_details = ttk.Frame(root)
+Site_details.pack(padx=10, pady=10, fill='x', expand=True)
+
+# site name
+Site_Name_label = ttk.Label(Site_details, text="\nSite_Name: (Required)")
+Site_Name_label.pack(fill='x', expand=True)
+Site_Name_entry = ttk.Entry(Site_details, textvariable=SiteName_var)
+Site_Name_entry.pack(fill='x', expand=True)
+Site_Name_entry.focus()
+
+# Username
+Username_label = ttk.Label(Site_details, text="\nUsername: (Required)")
+Username_label.pack(fill='x', expand=True)
+Username_entry = ttk.Entry(Site_details, textvariable=Username_var)
+Username_entry.pack(fill='x', expand=True)
+
+# Password
+password_label = ttk.Label(Site_details, text="\nPassword: (Required)")
+password_label.pack(fill='x', expand=True)
+password_entry = ttk.Entry(Site_details, textvariable=password_var, show="*")
+password_entry.pack(fill='x', expand=True)
+
+# ip Address 1
+IP_Address1_label = ttk.Label(Site_details, text="\nCore Switch 1: (Required)")
+IP_Address1_label.pack(fill='x', expand=True)
+IP_Address1_entry = ttk.Entry(Site_details, textvariable=IP_Address1_var)
+IP_Address1_entry.pack(fill='x', expand=True)
+
+# ip Address 2
+IP_Address2_label = ttk.Label(Site_details, text="\nCore Switch 2: (Optional)")
+IP_Address2_label.pack(fill='x', expand=True)
+IP_Address2_entry = ttk.Entry(Site_details, textvariable=IP_Address2_var)
+IP_Address2_entry.pack(fill='x', expand=True)
+
+# Folder Path Save Directory
+FolderPath_label = ttk.Label(Site_details, text="\nResults file location: (Optional)")
+FolderPath_label.pack(fill='x', expand=True)
+button = ttk.Button(Site_details, text="Browse Folder", command=get_folder_path)
+button.pack(fill='x', expand=True)
+FolderPath_entry = ttk.Entry(Site_details, textvariable=FolderPath_var)
+FolderPath_entry.configure(state='disabled')
+FolderPath_entry.pack(fill='x', expand=True)
+
+# Dropdown Box
+JumpServer_var.set("10.251.131.6")
+JumpServer_label = ttk.Label(Site_details, text="\nJumper Server:")
+JumpServer_label.pack(fill='x', expand=True)
+JumpServer = ttk.Combobox(Site_details,
+                          values=["MMFTH1V-MGMTS02", "AR31NOC"],
+                          state="readonly", textvariable=JumpServer_var,
+                          )
+JumpServer.current(0)
+JumpServer.pack(fill='x', expand=True)
+
+# Debugging Dropdown Box
+Debugging_var.set("Off")
+Debugging_label = ttk.Label(Site_details, text="\nDebugging:")
+Debugging_label.pack(fill='x', expand=True)
+Debugging = ttk.Combobox(Site_details, values=["Off", "On"], state="readonly", textvariable=Debugging_var, )
+Debugging.current(0)
+Debugging.pack(fill='x', expand=True, pady=(0, 30))
+
+# Submit button
+Submit_button = ttk.Button(Site_details, text="Submit", command=check_empty, width=50)
+Submit_button.pack(fill='x')
+
+cancel_button = ttk.Button(Site_details, text="Cancel", command=quit_application, width=50)
+cancel_button.pack(fill='x', pady=(0, 30))
+
+# progress_label = ttk.Label(Site_details, textvariable=var)
+# progress_label.pack(fill='x', expand=True, pady=(0, 30))
+
+username = Username_var.get()
+password = password_var.get()
+IPAddr1 = IP_Address1_var.get()
+IPAddr2 = IP_Address2_var.get()
+SiteName = SiteName_var.get()
+FolderPath = FolderPath_var.get()
+jump_server = "10.251.6.31" if JumpServer_var.get() == "AR31NOC" else "10.251.131.6"
+
+# ---------------- TKinter Configuration End ----------------
+# -----------------------------------------------------------
+
 
 # -----------------------------------------------------------
 # --------------- Logging Configuration Start ---------------
@@ -73,7 +209,7 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
-elif my_gui.Debugging == "On":
+elif Debugging == "On":
     logging.basicConfig(
         # Define logging level
         level=logging.DEBUG,
@@ -205,9 +341,10 @@ def get_hostname(ip):
 
 def main():
     global FolderPath
+
+    root.mainloop()
     # Start timer.
     start = time.perf_counter()
-    root.mainloop()
     # Define amount of threads.
     thread_count = 10
     pool = ThreadPool(thread_count)
@@ -266,7 +403,8 @@ def main():
     # End timer.
     end = time.perf_counter()
     log.info(f"Script finished in {end - start:0.4f} seconds")
-    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"
+                                        f"File saved in:\n{filepath}", "Info", 0x40000)
 
 
 if __name__ == "__main__":

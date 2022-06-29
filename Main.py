@@ -114,13 +114,13 @@ Site_Name_label = ttk.Label(Site_details, text="\nSite_Name: (Required)")
 Site_Name_label.pack(fill='x', expand=True)
 Site_Name_entry = ttk.Entry(Site_details, textvariable=SiteName_var)
 Site_Name_entry.pack(fill='x', expand=True)
+Site_Name_entry.focus()
 
 # Username
 Username_label = ttk.Label(Site_details, text="\nUsername: (Required)")
 Username_label.pack(fill='x', expand=True)
 Username_entry = ttk.Entry(Site_details, textvariable=Username_var)
 Username_entry.pack(fill='x', expand=True)
-Username_entry.focus()
 
 # Password
 password_label = ttk.Label(Site_details, text="\nPassword: (Required)")

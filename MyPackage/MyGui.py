@@ -8,7 +8,7 @@ class MyGUIClass:
         self.master = master
         master.title("CDP Network Map")
         master.resizable(False, True)
-        master.protocol('WM_DELETE_WINDOW', self.quite_script)
+        master.protocol('WM_DELETE_WINDOW', self.quit_script)
 
         self.Site_details = ttk.Frame(master)
         self.Site_details.pack(padx=20, pady=10, fill='x', expand=True)
@@ -80,11 +80,11 @@ class MyGUIClass:
         self.submit_button = Button(self.Site_details, text="Submit", command=self.check_empty, width=25)
         self.submit_button.pack(side="left", fill="x",)
 
-        self.cancel_button = Button(self.Site_details, text="Cancel", command=self.quite_script, width=25)
+        self.cancel_button = Button(self.Site_details, text="Cancel", command=self.quit_script, width=25)
         self.cancel_button.pack(side="right", fill="x")
 
     @staticmethod
-    def quite_script():
+    def quit_script():
         sys.exit()
 
     def check_empty(self):

@@ -42,7 +42,7 @@ class MyGUIClass:
         self.IP_Address1_entry.pack(fill='x', expand=True)
 
         self.IP_Address2_var = StringVar()
-        self.IP_Address2_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
+        self.IP_Address2_label = Label(self.Site_details, text="\nCore Switch 1: (Optional)", anchor="w")
         self.IP_Address2_label.pack(fill='x', expand=True)
         self.IP_Address2_entry = Entry(self.Site_details, textvariable=self.IP_Address2_var)
         self.IP_Address2_entry.pack(fill='x', expand=True)
@@ -62,7 +62,7 @@ class MyGUIClass:
         self.JumpServer_label = Label(self.Site_details, text="\nJumper Server:", anchor="w")
         self.JumpServer_label.pack(fill='x', expand=True)
         self.JumpServer = ttk.Combobox(self.Site_details,
-                                       values=["MMFTH1V-MGMTS02", "AR31NOC"],
+                                       values=["MMFTH1V-MGMTS02", "AR31NOC", "None"],
                                        state="readonly", textvariable=self.JumpServer_var,
                                        )
         self.JumpServer.current(0)
@@ -109,6 +109,7 @@ class MyGUIClass:
                                                 f"Please check and try again!", "Error",
                                              0x40000)
         else:
+            self.master.destroy()
             pass
 
     def get_folder_path(self):

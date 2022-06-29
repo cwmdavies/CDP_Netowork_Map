@@ -41,15 +41,23 @@ timeout = 15
 
 root = Tk()
 my_gui = MyGui.MyGUIClass(root)
+root.mainloop()
 
-SiteName = my_gui.SiteName_var
-Debugging = my_gui.Debugging_var
-jump_server = my_gui.JumpServer_var
-username = my_gui.Username_var
-password = my_gui.password_var
-IPAddr1 = my_gui.IP_Address1_var
-IPAddr2 = my_gui.IP_Address2_var
-FolderPath = my_gui.FolderPath_var
+SiteName = my_gui.SiteName_var.get()
+Debugging = my_gui.Debugging_var.get()
+jump_server = my_gui.JumpServer_var.get()
+username = my_gui.Username_var.get()
+password = my_gui.password_var.get()
+IPAddr1 = my_gui.IP_Address1_var.get()
+IPAddr2 = my_gui.IP_Address2_var.get()
+FolderPath = my_gui.FolderPath_var.get()
+if my_gui.JumpServer_var.get() == "AR31NOC":
+    jump_server = "10.251.6.31"
+if my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
+    jump_server = "10.251.131.6"
+if my_gui.JumpServer_var.get() == "None":
+    jump_server = "None"
+
 
 # -----------------------------------------------------------
 # --------------- Logging Configuration Start ---------------
@@ -127,32 +135,63 @@ def jump_session(ip):
         target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
                        timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
         with ThreadLock:
-            log.info(f"Connection to IP: {ip} established")
+            log.info(f"Jump Session Function Error: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
-            log.error(f"Authentication to IP: {ip} failed! Please check your ip, username and password.")
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!" 
+                      f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         with ThreadLock:
-            log.error(f"Unable to connect to IP: {ip}!")
+            log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
         with ThreadLock:
-            log.error(f"Connection or Timeout error occurred for IP: {ip}!")
+            log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
         with ThreadLock:
-            log.error(f"Open Session Error: An unknown error occurred for IP: {ip}!")
+            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!")
             log.error(f"{err}")
         return None, None, False
+
+
+def open_session(ip):
+    if not ip_check(ip):
+        return None, False
+    try:
+        log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=ip, port=22, username=username, password=password)
+        log.info(f"Open Session Function: Connected to ip Address: {ip}")
+        return ssh, True
+    except paramiko.ssh_exception.AuthenticationException:
+        log.error(f"Open Session Function:"
+                  f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
+        return None, False
+    except paramiko.ssh_exception.NoValidConnectionsError:
+        log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
+        return None, False
+    except (ConnectionError, TimeoutError):
+        log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
+        return None, False
+    except Exception as err:
+        log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
+        log.error(f"\t Error: {err}")
+        return None, False
 
 
 # Connects to the host's IP Address and runs the 'show cdp neighbors detail'
 # command and parses the output using TextFSM and saves it to a list of dicts.
 # Returns None.
 def get_cdp_details(ip):
-    ssh, jump_box, connection = jump_session(ip)
+    jump_box = None
+    if jump_server == "None":
+        ssh, connection = open_session(ip)
+    else:
+        ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
     hostname = get_hostname(ip)
@@ -177,14 +216,19 @@ def get_cdp_details(ip):
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
     ssh.close()
-    jump_box.close()
+    if jump_box:
+        jump_box.close()
 
 
 # Connects to the host's IP Address and runs the 'show run | inc hostname'
 # command and parses the output using TextFSM and saves as a string.
 # Returns the string.
 def get_hostname(ip):
-    ssh, jump_box, connection = jump_session(ip)
+    jump_box = None
+    if jump_server == "None":
+        ssh, connection = open_session(ip)
+    else:
+        ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
@@ -199,7 +243,8 @@ def get_hostname(ip):
     except:
         hostname = "Not Found"
     ssh.close()
-    jump_box.close()
+    if jump_box:
+        jump_box.close()
     return hostname
 
 
@@ -207,16 +252,15 @@ def main():
     global FolderPath
     # Start timer.
     start = time.perf_counter()
-    root.mainloop()
     # Define amount of threads.
     thread_count = 10
     pool = ThreadPool(thread_count)
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(
-        "No valid IP Address was found. Please check and try again")
+        f"{IPAddr1}\nNo valid IP Address was found. Please check and try again")
     IP_LIST.append(IPAddr2) if ip_check(IPAddr2) else log.info(
-        "No valid IP Address was found.")
+        f"{IPAddr2}\nNo valid IP Address was found.")
 
     # Start the CDP recursive lookup on the network and save the results.
     i = 0

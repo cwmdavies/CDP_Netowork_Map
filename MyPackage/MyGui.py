@@ -1,5 +1,5 @@
 from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
-from tkinter.messagebox import showinfo
+from tkinter.messagebox import showinfo, showerror
 import sys
 import ctypes
 
@@ -84,31 +84,20 @@ class MyGUIClass:
         self.cancel_button.pack(side="right", fill="x")
 
     @staticmethod
-    def greet():
-        showinfo("Information", "Greetings!")
-
-    @staticmethod
     def quite_script():
         sys.exit()
 
     def check_empty(self):
         if self.Username_var.get() == "":
-            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
-                                                f"Please check and try again!", "Error",
-                                             0x40000)
+            showerror(f"Error", "A required field is empty\nPlease check and try again!")
         elif self.password_var.get() == "":
-            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
-                                                f"Please check and try again!", "Error",
-                                             0x40000)
+            showerror(f"Error", "A required field is empty\nPlease check and try again!")
         elif self.IP_Address1_var.get() == "":
-            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
-                                                f"Please check and try again!", "Error",
-                                             0x40000)
+            showerror(f"Error", "A required field is empty\nPlease check and try again!")
         elif self.SiteName_var.get() == "":
-            ctypes.windll.user32.MessageBoxW(0, f"A required field is empty\n"
-                                                f"Please check and try again!", "Error",
-                                             0x40000)
+            showerror(f"Error", "A required field is empty\nPlease check and try again!")
         else:
+            showinfo("Information", "Your script is running in the background\nYou will be notified upon completion!")
             self.master.destroy()
             pass
 

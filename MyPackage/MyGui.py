@@ -1,7 +1,6 @@
 from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
-import ctypes
 
 
 class MyGUIClass:

@@ -8,6 +8,7 @@ class MyGUIClass:
         self.master = master
         master.title("CDP Network Map")
         master.resizable(False, True)
+        master.protocol('WM_DELETE_WINDOW', self.quite_script)
 
         self.Site_details = ttk.Frame(master)
         self.Site_details.pack(padx=20, pady=10, fill='x', expand=True)

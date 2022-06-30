@@ -1,6 +1,7 @@
 from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
+import ipaddress
 
 
 class MyGUIClass:
@@ -88,19 +89,23 @@ class MyGUIClass:
         sys.exit()
 
     def check_empty(self):
-        if (
-                self.Username_var.get() and
-                self.SiteName_var.get() and
-                self.password_var.get() and
-                self.IP_Address1_var.get() and
-                self.SiteName_var.get()
-                ):
-            showinfo("Information", "Your script is running in the background\n"
-                                    "You will be notified upon completion!")
-            self.master.destroy()
-            pass
-        else:
-            showerror(f"Error", "A required field is empty\n"
+        try:
+            if (
+                    self.Username_var.get() and
+                    self.SiteName_var.get() and
+                    self.password_var.get() and
+                    ipaddress.ip_address(self.IP_Address1_var.get()) and
+                    self.SiteName_var.get()
+                    ):
+                showinfo("Information", "Your script is running in the background\n"
+                                        "You will be notified upon completion!")
+                self.master.destroy()
+                pass
+            else:
+                showerror(f"Error", "A required field is empty\n"
+                                    "Please check and try again!")
+        except ValueError:
+            showerror(f"Error", "The IP Address you provided is invalid\n"
                                 "Please check and try again!")
 
     def get_folder_path(self):

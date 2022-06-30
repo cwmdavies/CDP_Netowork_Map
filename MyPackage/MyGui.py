@@ -88,18 +88,20 @@ class MyGUIClass:
         sys.exit()
 
     def check_empty(self):
-        if self.Username_var.get() == "":
-            showerror(f"Error", "A required field is empty\nPlease check and try again!")
-        elif self.password_var.get() == "":
-            showerror(f"Error", "A required field is empty\nPlease check and try again!")
-        elif self.IP_Address1_var.get() == "":
-            showerror(f"Error", "A required field is empty\nPlease check and try again!")
-        elif self.SiteName_var.get() == "":
-            showerror(f"Error", "A required field is empty\nPlease check and try again!")
-        else:
-            showinfo("Information", "Your script is running in the background\nYou will be notified upon completion!")
+        if (
+                self.Username_var.get() and
+                self.SiteName_var.get() and
+                self.password_var.get() and
+                self.IP_Address1_var.get() and
+                self.SiteName_var.get()
+                ):
+            showinfo("Information", "Your script is running in the background\n"
+                                    "You will be notified upon completion!")
             self.master.destroy()
             pass
+        else:
+            showerror(f"Error", "A required field is empty\n"
+                                "Please check and try again!")
 
     def get_folder_path(self):
         folder_selected = filedialog.askdirectory()

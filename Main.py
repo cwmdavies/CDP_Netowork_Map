@@ -59,7 +59,6 @@ if my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
 if my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
-
 # -----------------------------------------------------------
 # --------------- Logging Configuration Start ---------------
 
@@ -83,7 +82,7 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
-elif my_gui.Debugging == "On":
+elif Debugging == "On":
     logging.basicConfig(
         # Define logging level
         level=logging.DEBUG,
@@ -98,6 +97,7 @@ elif my_gui.Debugging == "On":
 
 # Define your own logger name
 log = logging.getLogger(__name__)
+
 
 # --------------- Logging Configuration End ---------------
 # ---------------------------------------------------------
@@ -119,7 +119,7 @@ def jump_session(ip):
     if not ip_check(ip):
         with ThreadLock:
             log.error(f"open_session function error: "
-                      f"ip Address {ip} is not a valid Address. Please check and restart the script!",)
+                      f"ip Address {ip} is not a valid Address. Please check and restart the script!", )
         return None, None, False
     try:
         with ThreadLock:
@@ -131,7 +131,7 @@ def jump_session(ip):
         src_address = (local_IP_address, 22)
         destination_address = (ip, 22)
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
-                                                           timeout=timeout,)
+                                                           timeout=timeout, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
@@ -142,7 +142,7 @@ def jump_session(ip):
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
             authentication_error.append(ip)
-            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!" 
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!"
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -173,18 +173,23 @@ def open_session(ip):
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        log.error(f"Open Session Function:"
-                  f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
+        with ThreadLock:
+            log.error(f"Open Session Function:"
+                      f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
-        log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
+        with ThreadLock:
+            connection_error.append(ip)
+            log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
-        log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
+        with ThreadLock:
+            log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
         return None, False
     except Exception as err:
-        log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
-        log.error(f"\t Error: {err}")
+        with ThreadLock:
+            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
+            log.error(f"\t Error: {err}")
         return None, False
 
 

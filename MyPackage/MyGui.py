@@ -78,17 +78,22 @@ class MyGUIClass:
         self.Debugging.current(0)
         self.Debugging.pack(fill='x', expand=True, pady=(0, 20))
 
-        self.submit_button = Button(self.Site_details, text="Submit", command=self.check_empty, width=25)
+        self.submit_button = Button(self.Site_details, text="Submit", command=self.validation, width=25)
         self.submit_button.pack(side="left", fill="x",)
 
         self.cancel_button = Button(self.Site_details, text="Cancel", command=self.quit_script, width=25)
         self.cancel_button.pack(side="right", fill="x")
 
+        self.progress_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
+        self.progress_label.pack(fill='x', expand=True)
+
     @staticmethod
     def quit_script():
         sys.exit()
 
-    def check_empty(self):
+    def validation(self):
+        # sets the required fields and checks the IP addresses are valid.
+        # Second IP Address field is only checked if it's filled in.
         try:
             if (
                     self.Username_var.get() and
@@ -98,6 +103,8 @@ class MyGUIClass:
                     self.SiteName_var.get() and
                     self.FolderPath_var.get()
                     ):
+                if self.IP_Address2_var.get():
+                    ipaddress.ip_address(self.IP_Address2_var.get())
                 self.Site_Name_entry.config(state="disabled")
                 self.Username_entry.config(state="disabled")
                 self.password_entry.config(state="disabled")

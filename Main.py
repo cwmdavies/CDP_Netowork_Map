@@ -22,7 +22,6 @@ import textfsm
 import ipaddress
 import logging
 import sys
-import os
 import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
@@ -34,6 +33,8 @@ from openpyxl import load_workbook
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
 Hostnames_List = []
+connection_error = []
+authentication_error = []
 collection_of_results = []
 index = 2
 ThreadLock = Lock()
@@ -63,7 +64,8 @@ if my_gui.JumpServer_var.get() == "None":
 # --------------- Logging Configuration Start ---------------
 
 # Log file location
-logfile = 'debug.log'
+logfile = f'{FolderPath}\\debug.log'
+
 # Define the log format
 log_format = (
     '[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
@@ -139,15 +141,18 @@ def jump_session(ip):
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
+            authentication_error.append(ip)
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!" 
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         with ThreadLock:
+            connection_error.append(ip)
             log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
         with ThreadLock:
+            connection_error.append(ip)
             log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
@@ -287,10 +292,7 @@ def main():
                                                          "CAPABILITIES"
                                                          ])
 
-    if FolderPath == "":
-        filepath = f"{os.getcwd()}\\{SiteName}_CDP Switch Audit.xlsx"
-    else:
-        filepath = f"{FolderPath}/{SiteName}_CDP Switch Audit.xlsx"
+    filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
 
     array.to_excel(filepath, index=False)
     workbook = load_workbook(filename=filepath)

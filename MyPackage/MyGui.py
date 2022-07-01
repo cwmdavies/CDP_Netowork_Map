@@ -50,7 +50,7 @@ class MyGUIClass:
 
         self.FolderPath_var = StringVar()
         self.FolderPath_var = StringVar()
-        self.FolderPath_label = Label(self.Site_details, text="\nResults file location: (Optional)", anchor="w")
+        self.FolderPath_label = Label(self.Site_details, text="\nResults file location: (Required)", anchor="w")
         self.FolderPath_label.pack(fill='x', expand=True)
         self.browse_button = Button(self.Site_details, text="Browse Folder", command=self.get_folder_path, width=25)
         self.browse_button.pack(anchor="w")
@@ -95,8 +95,19 @@ class MyGUIClass:
                     self.SiteName_var.get() and
                     self.password_var.get() and
                     ipaddress.ip_address(self.IP_Address1_var.get()) and
-                    self.SiteName_var.get()
+                    self.SiteName_var.get() and
+                    self.FolderPath_var.get()
                     ):
+                self.Site_Name_entry.config(state="disabled")
+                self.Username_entry.config(state="disabled")
+                self.password_entry.config(state="disabled")
+                self.IP_Address1_entry.config(state="disabled")
+                self.IP_Address2_entry.config(state="disabled")
+                self.FolderPath_entry.config(state="disabled")
+                self.browse_button.config(state="disabled")
+                self.JumpServer.config(state="disabled")
+                self.Debugging.config(state="disabled")
+                self.submit_button.config(state="disabled")
                 showinfo("Information", "Your script is running in the background\n"
                                         "You will be notified upon completion!")
                 self.master.destroy()
@@ -113,6 +124,8 @@ class MyGUIClass:
         self.FolderPath_var.set(folder_selected)
 
 
-# root = Tk()
-# my_gui = MyGUIClass(root)
-# root.mainloop()
+""" Example Code
+root = Tk()
+my_gui = MyGUIClass(root)
+root.mainloop()
+"""

@@ -84,9 +84,6 @@ class MyGUIClass:
         self.cancel_button = Button(self.Site_details, text="Cancel", command=self.quit_script, width=25)
         self.cancel_button.pack(side="right", fill="x")
 
-        self.progress_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
-        self.progress_label.pack(fill='x', expand=True)
-
     @staticmethod
     def quit_script():
         sys.exit()
@@ -131,7 +128,9 @@ class MyGUIClass:
         self.FolderPath_var.set(folder_selected)
 
 
-""" Example Code
+"""
+Example Code
+
 root = Tk()
 my_gui = MyGUIClass(root)
 root.mainloop()

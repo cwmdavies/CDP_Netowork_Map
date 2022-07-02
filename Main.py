@@ -123,7 +123,7 @@ def jump_session(ip):
         return None, None, False
     try:
         with ThreadLock:
-            log.info(f"Trying to establish a connection to: {ip}")
+            log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         jump_box.connect(jump_server, username=username, password=password)
@@ -137,7 +137,7 @@ def jump_session(ip):
         target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
                        timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
         with ThreadLock:
-            log.info(f"Jump Session Function Error: Connection to IP: {ip} established")
+            log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:

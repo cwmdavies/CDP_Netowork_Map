@@ -28,13 +28,13 @@ from multiprocessing import Lock
 from tkinter import Tk
 import ctypes
 import pandas as pd
-from openpyxl import load_workbook
+from openpyxl.workbook import Workbook
 
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
 Hostnames_List = []
-connection_error = []
-authentication_error = []
+connection_errors = []
+authentication_errors = []
 collection_of_results = []
 index = 2
 ThreadLock = Lock()
@@ -141,18 +141,18 @@ def jump_session(ip):
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
-            authentication_error.append(ip)
+            authentication_errors.append(ip)
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!"
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         with ThreadLock:
-            connection_error.append(ip)
+            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
         with ThreadLock:
-            connection_error.append(ip)
+            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
@@ -174,16 +174,18 @@ def open_session(ip):
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
+            authentication_errors.append(ip)
             log.error(f"Open Session Function:"
                       f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         with ThreadLock:
-            connection_error.append(ip)
+            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
         with ThreadLock:
+            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
         return None, False
     except Exception as err:
@@ -286,33 +288,49 @@ def main():
     pool.close()
     pool.join()
 
-    array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
-                                                         "LOCAL_IP",
-                                                         "LOCAL_PORT",
-                                                         "DESTINATION_HOST",
-                                                         "REMOTE_PORT",
-                                                         "MANAGEMENT_IP",
-                                                         "PLATFORM",
-                                                         "SOFTWARE_VERSION",
-                                                         "CAPABILITIES"
-                                                         ])
+    audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
+                                                               "LOCAL_IP",
+                                                               "LOCAL_PORT",
+                                                               "DESTINATION_HOST",
+                                                               "REMOTE_PORT",
+                                                               "MANAGEMENT_IP",
+                                                               "PLATFORM",
+                                                               "SOFTWARE_VERSION",
+                                                               "CAPABILITIES"
+                                                               ])
+    conn_array = pd.DataFrame(connection_errors, columns=["Connection Errors"])
+    auth_array = pd.DataFrame(authentication_errors, columns=["Authentication Errors"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
+    writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
 
-    array.to_excel(filepath, index=False)
-    workbook = load_workbook(filename=filepath)
-    ws = workbook["Sheet1"]
-    ws.auto_filter.ref = ws.dimensions
-    ws.column_dimensions['A'].width = "30"
-    ws.column_dimensions['B'].width = "30"
-    ws.column_dimensions['C'].width = "30"
-    ws.column_dimensions['D'].width = "30"
-    ws.column_dimensions['E'].width = "30"
-    ws.column_dimensions['F'].width = "30"
-    ws.column_dimensions['G'].width = "50"
-    ws.column_dimensions['H'].width = "120"
-    ws.column_dimensions['I'].width = "30"
-    workbook.save(filename=filepath)
+    wb = Workbook()
+    ws1 = wb.create_sheet("Audit", 0)
+    ws1.title = "Audit"
+    ws2 = wb.create_sheet("Conn_Errors", 1)
+    ws2.title = "Conn_Errors"
+    ws3 = wb.create_sheet("Conn_Errors", 2)
+    ws3.title = "Auth_Errors"
+    ws4 = wb["Sheet"]
+    wb.remove(ws4)
+
+    audit_array.to_excel(writer, index=False, sheet_name="Audit")
+    conn_array.to_excel(writer, index=False, sheet_name="Conn_Errors")
+    auth_array.to_excel(writer, index=False, sheet_name="Auth_Errors")
+
+    writer.sheets["Audit"].autofilter("A1:I1")
+    writer.sheets["Audit"].set_column(0, 0, 30)
+    writer.sheets["Audit"].set_column(1, 1, 30)
+    writer.sheets["Audit"].set_column(2, 2, 30)
+    writer.sheets["Audit"].set_column(3, 3, 30)
+    writer.sheets["Audit"].set_column(4, 4, 30)
+    writer.sheets["Audit"].set_column(5, 5, 30)
+    writer.sheets["Audit"].set_column(6, 6, 50)
+    writer.sheets["Audit"].set_column(7, 7, 120)
+    writer.sheets["Audit"].set_column(8, 8, 30)
+    writer.sheets["Conn_Errors"].set_column(0, 0, 20)
+    writer.sheets["Auth_Errors"].set_column(0, 0, 20)
+    writer.save()
 
     ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
 

@@ -210,7 +210,7 @@ def open_session(ip) -> "SSH Session + Connection Status":
         return None, False
 
 
-def get_cdp_details(ip) -> "None":
+def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     """
     Takes in an IP Address as a string.
     Connects to the host's IP Address and runs the 'show cdp neighbors detail'
@@ -250,7 +250,7 @@ def get_cdp_details(ip) -> "None":
         jump_box.close()
 
 
-def get_hostname(ip):
+def get_hostname(ip) -> "Hostname as a string":
     """
     Connects to the host's IP Address and runs the 'show run | inc hostname'
     command and parses the output using TextFSM and saves as a string.

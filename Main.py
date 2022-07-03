@@ -163,6 +163,8 @@ def jump_session(ip):
         return None, None, False
 
 
+# Connects to the IP address directly using SSH.
+# Returns the SSH session.
 def open_session(ip):
     if not ip_check(ip):
         return None, False

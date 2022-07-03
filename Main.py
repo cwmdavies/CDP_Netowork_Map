@@ -103,9 +103,12 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------
 
 
-# Checks that the IP address is valid.
-# Returns True or false.
-def ip_check(ip):
+def ip_check(ip) -> bool:
+    """
+    Takes in an IP Address as a string.
+    Checks that the IP address is valid.
+    Returns True or false.
+    """
     try:
         ipaddress.ip_address(ip)
         return True
@@ -113,9 +116,13 @@ def ip_check(ip):
         return False
 
 
-# Connects to the IP address through a jump host using SSH.
-# Returns the SSH session.
-def jump_session(ip):
+def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
+    """
+    Takes in an IP Address as a string.
+    Connects to the IP address through a jump host using SSH.
+    Returns the SSH session, The jump Session and
+    a boolean value that represents the state of the connection.
+    """
     if not ip_check(ip):
         with ThreadLock:
             log.error(f"open_session function error: "
@@ -157,12 +164,19 @@ def jump_session(ip):
         return None, None, False
     except Exception as err:
         with ThreadLock:
+            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!")
             log.error(f"{err}")
         return None, None, False
 
 
-def open_session(ip):
+def open_session(ip) -> "SSH Session + Connection Status":
+    """
+    Takes in an IP Address as a string.
+    Connects to the IP address directly using SSH.
+    Returns the SSH session and
+    a boolean value that represents the state of the connection.
+    """
     if not ip_check(ip):
         return None, False
     try:
@@ -175,7 +189,7 @@ def open_session(ip):
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
             authentication_errors.append(ip)
-            log.error(f"Open Session Function:"
+            log.error(f"Open Session Function: "
                       f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -190,15 +204,19 @@ def open_session(ip):
         return None, False
     except Exception as err:
         with ThreadLock:
+            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
             log.error(f"\t Error: {err}")
         return None, False
 
 
-# Connects to the host's IP Address and runs the 'show cdp neighbors detail'
-# command and parses the output using TextFSM and saves it to a list of dicts.
-# Returns None.
-def get_cdp_details(ip):
+def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
+    """
+    Takes in an IP Address as a string.
+    Connects to the host's IP Address and runs the 'show cdp neighbors detail'
+    command and parses the output using TextFSM and saves it to a list of dicts.
+    Returns None.
+    """
     jump_box = None
     if jump_server == "None":
         ssh, connection = open_session(ip)
@@ -232,10 +250,12 @@ def get_cdp_details(ip):
         jump_box.close()
 
 
-# Connects to the host's IP Address and runs the 'show run | inc hostname'
-# command and parses the output using TextFSM and saves as a string.
-# Returns the string.
-def get_hostname(ip):
+def get_hostname(ip) -> "Hostname as a string":
+    """
+    Connects to the host's IP Address and runs the 'show run | inc hostname'
+    command and parses the output using TextFSM and saves as a string.
+    Returns the string.
+    """
     jump_box = None
     if jump_server == "None":
         ssh, connection = open_session(ip)

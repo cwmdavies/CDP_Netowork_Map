@@ -251,7 +251,7 @@ def get_hostname(ip):
             with open("textfsm/hostname.textfsm") as f:
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
-                hostname = result[0][0]
+                hostname = result[0][0] if result else "Not Found"
     except:
         hostname = "Not Found"
     ssh.close()

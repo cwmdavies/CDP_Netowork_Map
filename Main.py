@@ -157,6 +157,7 @@ def jump_session(ip):
         return None, None, False
     except Exception as err:
         with ThreadLock:
+            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!")
             log.error(f"{err}")
         return None, None, False
@@ -190,6 +191,7 @@ def open_session(ip):
         return None, False
     except Exception as err:
         with ThreadLock:
+            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
             log.error(f"\t Error: {err}")
         return None, False

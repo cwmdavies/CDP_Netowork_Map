@@ -115,6 +115,7 @@ class MyGUIClass(Thread):
                 self.Debugging.config(state="disabled")
                 self.submit_button.config(state="disabled")
                 showinfo("Information", "Your script is running in the background\n"
+                                        "and may take a few minutes\n"
                                         "You will be notified upon completion!")
                 self.master.destroy()
                 pass

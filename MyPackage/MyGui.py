@@ -2,12 +2,14 @@ from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
+from threading import Thread
 
 
-class MyGUIClass:
+class MyGUIClass(Thread):
     def __init__(self, master):
+        super().__init__()
         self.master = master
-        master.title("CDP Network Map")
+        master.title("CDP Network Auditor: V1.6")
         master.resizable(False, True)
         master.protocol('WM_DELETE_WINDOW', self.quit_script)
 

@@ -286,8 +286,6 @@ def main():
     # Start timer.
     start = time.perf_counter()
     # Define amount of threads.
-    thread_count = 10
-    pool = ThreadPool(thread_count)
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(
@@ -296,6 +294,7 @@ def main():
         f"{IPAddr2}\nNo valid IP Address was found.")
 
     # Start the CDP recursive lookup on the network and save the results.
+    thread_count = 10
     with ThreadPool(thread_count) as pool:
         i = 0
         while i < len(IP_LIST):

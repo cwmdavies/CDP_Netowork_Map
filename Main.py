@@ -296,18 +296,18 @@ def main():
         f"{IPAddr2}\nNo valid IP Address was found.")
 
     # Start the CDP recursive lookup on the network and save the results.
-    i = 0
-    while i < len(IP_LIST):
-        limit = i + min(thread_count, (len(IP_LIST) - i))
-        ip_addresses = IP_LIST[i:limit]
+    with ThreadPool(thread_count) as pool:
+        i = 0
+        while i < len(IP_LIST):
+            limit = i + min(thread_count, (len(IP_LIST) - i))
+            ip_addresses = IP_LIST[i:limit]
 
-        pool.map(get_cdp_details, ip_addresses)
+            pool.map(get_cdp_details, ip_addresses)
 
-        i = limit
-
-    # Close off and join the pools together.
-    pool.close()
-    pool.join()
+            i = limit
+        # Close off and join the pools together.
+        pool.close()
+        pool.join()
 
     audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
                                                                "LOCAL_IP",

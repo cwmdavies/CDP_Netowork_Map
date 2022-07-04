@@ -2,8 +2,8 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-Version: 1.6
 
+App Version: 1.6
 Tested on Python 3.8 to 3.10
 
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"

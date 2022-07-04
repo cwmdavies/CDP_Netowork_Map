@@ -2,6 +2,7 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
+Version: 1.6
 
 Tested on Python 3.8 to 3.10
 

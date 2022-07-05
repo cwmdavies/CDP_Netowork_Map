@@ -225,7 +225,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
-    hostname = get_hostname(ssh)
+    hostname = get_hostname(ip)
     if hostname not in Hostnames_List:
         Hostnames_List.append(hostname)
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
@@ -251,12 +251,19 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         jump_box.close()
 
 
-def get_hostname(ssh) -> "Hostname as a string":
+def get_hostname(ip) -> "Hostname as a string":
     """
     Connects to the host's IP Address and runs the 'show run | inc hostname'
     command and parses the output using TextFSM and saves as a string.
     Returns the string.
     """
+    jump_box = None
+    if jump_server == "None":
+        ssh, connection = open_session(ip)
+    else:
+        ssh, jump_box, connection = jump_session(ip)
+    if not connection:
+        return None
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
@@ -268,6 +275,9 @@ def get_hostname(ssh) -> "Hostname as a string":
                 hostname = result[0][0]
     except:
         hostname = "Not Found"
+    ssh.close()
+    if jump_box:
+        jump_box.close()
     return hostname
 
 

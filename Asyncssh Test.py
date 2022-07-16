@@ -8,8 +8,20 @@ switch_pass = '*'
 
 
 async def run_client(host, username, password, command):
-    async with asyncssh.connect(host='192.168.1.31', username=jump_user, password=jump_pass, known_hosts=None) as jump:
-        async with asyncssh.connect(host=host, tunnel=jump, username=username, password=password, known_hosts=None) as connection:
+    async with asyncssh.connect(
+            host='192.168.1.31',
+            username=jump_user,
+            password=jump_pass,
+            known_hosts=None
+            ) as jump:
+
+        async with asyncssh.connect(
+                host=host,
+                tunnel=jump,
+                username=username,
+                password=password,
+                known_hosts=None
+                ) as connection:
             return await connection.run(command)
 
 

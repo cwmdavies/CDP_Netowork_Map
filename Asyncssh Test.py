@@ -29,8 +29,18 @@ async def run_multiple_clients():
     tasks = list()
 
     hosts_list = [
-        {'host': '192.168.1.2', 'username': switch_user, 'password': switch_pass, 'command': 'show cdp neighbors'},
-        {'host': '192.168.1.2', 'username': switch_user, 'password': switch_pass, 'command': 'show ip int brief'},
+        {
+            'host': '192.168.1.2',
+            'username': switch_user,
+            'password': switch_pass,
+            'command': 'show cdp neighbors'
+        },
+        {
+            'host': '192.168.1.2',
+            'username': switch_user,
+            'password': switch_pass,
+            'command': 'show ip int brief'
+         },
     ]
 
     for host in hosts_list:

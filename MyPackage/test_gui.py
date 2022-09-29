@@ -2,7 +2,6 @@ import sys
 
 from PyQt6.QtCore import Qt
 from PyQt6 import QtWidgets
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
 
 
 # Subclass QMainWindow to customize your application's main window
@@ -39,6 +38,10 @@ class MainWindow(QtWidgets.QMainWindow):
         run_button = QtWidgets.QPushButton("Run")
         run_button.clicked.connect(QtWidgets.QApplication.instance().quit)
         layout_3.addWidget(run_button)
+
+        cancel_button = QtWidgets.QPushButton("Cancel")
+        cancel_button.clicked.connect(QtWidgets.QApplication.instance().quit)
+        layout_3.addWidget(cancel_button)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(page_layout)

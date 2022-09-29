@@ -3,6 +3,8 @@ import sys
 from PyQt6.QtCore import Qt
 from PyQt6 import QtWidgets
 
+username_input_var = ""
+
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QtWidgets.QMainWindow):
@@ -10,6 +12,8 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("My App")
         self.setFixedWidth(250)
+
+        global username_input_var
 
         page_layout = QtWidgets.QVBoxLayout()
         page_layout.setContentsMargins(20, 20, 20, 20)
@@ -21,23 +25,23 @@ class MainWindow(QtWidgets.QMainWindow):
         page_layout.addLayout(layout_2)
         page_layout.addLayout(layout_3)
 
-        username_label = QtWidgets.QLabel("Username:")
-        layout_1.addWidget(username_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.username_label = QtWidgets.QLabel("Username:")
+        layout_1.addWidget(self.username_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        username_input = QtWidgets.QLineEdit()
-        self.username_var = username_input
-        layout_1.addWidget(username_input)
+        self.username_input = QtWidgets.QLineEdit()
+        layout_1.addWidget(self.username_input)
+        username_input_var = self.username_input.text()
 
-        password_label = QtWidgets.QLabel("Password:")
-        layout_2.addWidget(password_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.password_label = QtWidgets.QLabel("Password:")
+        layout_2.addWidget(self.password_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        password_input = QtWidgets.QLineEdit()
-        password_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
-        layout_2.addWidget(password_input)
+        self.password_input = QtWidgets.QLineEdit()
+        self.password_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+        layout_2.addWidget(self.password_input)
 
-        run_button = QtWidgets.QPushButton("Run")
-        run_button.clicked.connect(QtWidgets.QApplication.instance().quit)
-        layout_3.addWidget(run_button)
+        self.run_button = QtWidgets.QPushButton("Run")
+        self.run_button.clicked.connect(QtWidgets.QApplication.instance().quit)
+        layout_3.addWidget(self.run_button)
 
         cancel_button = QtWidgets.QPushButton("Cancel")
         cancel_button.clicked.connect(self.quit_script)
@@ -59,4 +63,4 @@ window.show()
 
 app.exec()
 
-print("Hello!")
+print(username_input_var)

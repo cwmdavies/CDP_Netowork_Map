@@ -40,13 +40,17 @@ class MainWindow(QtWidgets.QMainWindow):
         layout_3.addWidget(run_button)
 
         cancel_button = QtWidgets.QPushButton("Cancel")
-        cancel_button.clicked.connect(QtWidgets.QApplication.instance().quit)
+        cancel_button.clicked.connect(self.quit_script)
         layout_3.addWidget(cancel_button)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(page_layout)
 
         self.setCentralWidget(widget)
+
+    @staticmethod
+    def quit_script():
+        sys.exit()
 
 
 app = QtWidgets.QApplication(sys.argv)
@@ -55,4 +59,4 @@ window.show()
 
 app.exec()
 
-print(window.username_var)
+print("Hello!")

@@ -157,7 +157,7 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = (ip, 22)
+        destination_address = ip
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout, )
         target = paramiko.SSHClient()

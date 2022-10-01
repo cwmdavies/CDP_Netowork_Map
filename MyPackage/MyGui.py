@@ -2,10 +2,9 @@ from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
-from threading import Thread
 
 
-class MyGUIClass(Thread):
+class MyGUIClass:
     def __init__(self, master):
         super().__init__()
         self.master = master

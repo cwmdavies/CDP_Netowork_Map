@@ -26,7 +26,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.username_input = QtWidgets.QLineEdit()
         layout_1.addWidget(self.username_input)
-        username_input_var = self.username_input.text()
 
         self.password_label = QtWidgets.QLabel("Password:")
         layout_2.addWidget(self.password_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
@@ -61,4 +60,3 @@ app.exec()
 
 print(window.username_input.text())
 print(window.password_input.text())
-

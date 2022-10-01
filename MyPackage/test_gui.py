@@ -3,8 +3,6 @@ import sys
 from PyQt6.QtCore import Qt
 from PyQt6 import QtWidgets
 
-username_input_var = ""
-
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QtWidgets.QMainWindow):
@@ -12,8 +10,6 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("My App")
         self.setFixedWidth(250)
-
-        global username_input_var
 
         page_layout = QtWidgets.QVBoxLayout()
         page_layout.setContentsMargins(20, 20, 20, 20)
@@ -43,9 +39,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.run_button.clicked.connect(QtWidgets.QApplication.instance().quit)
         layout_3.addWidget(self.run_button)
 
-        cancel_button = QtWidgets.QPushButton("Cancel")
-        cancel_button.clicked.connect(self.quit_script)
-        layout_3.addWidget(cancel_button)
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.quit_script)
+        layout_3.addWidget(self.cancel_button)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(page_layout)
@@ -63,4 +59,6 @@ window.show()
 
 app.exec()
 
-print(username_input_var)
+print(window.username_input.text())
+print(window.password_input.text())
+

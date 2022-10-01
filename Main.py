@@ -30,6 +30,7 @@ from tkinter import Tk
 import ctypes
 import pandas as pd
 from openpyxl.workbook import Workbook
+import socket
 
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
@@ -115,6 +116,14 @@ def ip_check(ip) -> bool:
         return True
     except ValueError:
         return False
+
+
+def dns_resolve(dn):
+    try:
+        addr1 = socket.gethostbyname(dn)
+        return addr1
+    except socket.gaierror:
+        return None
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":

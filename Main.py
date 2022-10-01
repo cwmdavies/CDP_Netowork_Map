@@ -275,7 +275,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         jump_box.close()
 
 
-def get_hostname(ip) -> "Hostname(str)":
+def get_hostname(ip) -> "Hostname as a string":
     """
     Connects to the host's IP Address and runs the 'show run | inc hostname'
     command and parses the output using TextFSM and saves it as a string.
@@ -299,7 +299,8 @@ def get_hostname(ip) -> "Hostname(str)":
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
                 hostname = result[0][0]
-    except:
+    except Exception as Err:
+        log.error(Err)
         hostname = "Not Found"
     ssh.close()
     if jump_box:

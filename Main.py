@@ -122,6 +122,7 @@ def ip_check(ip) -> bool:
 
 def dns_resolve(dn) -> "IP Address":
     """
+    For Future Use!
     Takes in a domain name and does a DNS lookup on it and returns the IP Address.
     Returns None if the DNS lookup fails.
     :param dn: Domain name. Example: google.com

@@ -108,8 +108,10 @@ log = logging.getLogger(__name__)
 def ip_check(ip) -> bool:
     """
     Takes in an IP Address as a string.
-    Checks that the IP address is valid.
+    Checks that the IP address is a valid one.
     Returns True or false.
+    :param ip: Example: 192.168.1.1
+    :return: Boolean
     """
     try:
         ipaddress.ip_address(ip)
@@ -118,7 +120,13 @@ def ip_check(ip) -> bool:
         return False
 
 
-def dns_resolve(dn):
+def dns_resolve(dn) -> "IP Address":
+    """
+    Takes in a domain name and does a DNS lookup on it and returns the IP Address.
+    Returns None if the DNS lookup fails.
+    :param dn: Domain name. Example: google.com
+    :return: IP Address for the domain name. Example: 192.168.1.1
+    """
     try:
         addr1 = socket.gethostbyname(dn)
         return addr1
@@ -132,6 +140,8 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
     Connects to the IP address through a jump host using SSH.
     Returns the SSH session, The jump Session and
     a boolean value that represents the state of the connection.
+    :param ip: The IP Address you wish to connect to.
+    :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
     if not ip_check(ip):
         with ThreadLock:
@@ -186,6 +196,8 @@ def open_session(ip) -> "SSH Session + Connection Status":
     Connects to the IP address directly using SSH.
     Returns the SSH session and
     a boolean value that represents the state of the connection.
+    :param ip: The IP Address you wish to connect to.
+    :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
     if not ip_check(ip):
         return None, False
@@ -226,6 +238,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     Connects to the host's IP Address and runs the 'show cdp neighbors detail'
     command and parses the output using TextFSM and saves it to a list of dicts.
     Returns None.
+    :param ip: The IP Address you wish to connect to.
+    :return: None, appends dictionaries to a global list.
     """
     jump_box = None
     if jump_server == "None":
@@ -260,11 +274,13 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         jump_box.close()
 
 
-def get_hostname(ip) -> "Hostname as a string":
+def get_hostname(ip) -> "Hostname(str)":
     """
     Connects to the host's IP Address and runs the 'show run | inc hostname'
-    command and parses the output using TextFSM and saves as a string.
-    Returns the string.
+    command and parses the output using TextFSM and saves it as a string.
+    Returns the hostname as a string.
+    :param ip: The IP Address you wish to connect to.
+    :return: Hostname(str).
     """
     jump_box = None
     if jump_server == "None":

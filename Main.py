@@ -4,7 +4,7 @@ Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
 
 App Version: 1.6
-Tested on Python 3.8 to 3.10
+Tested on Python 3.10
 
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
@@ -34,7 +34,8 @@ import socket
 
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
-Hostnames_List = []
+hostnames_List = []
+dns_ip = {}
 connection_errors = []
 authentication_errors = []
 collection_of_results = []
@@ -122,7 +123,6 @@ def ip_check(ip) -> bool:
 
 def dns_resolve(dn) -> "IP Address":
     """
-    For Future Use!
     Takes in a domain name and does a DNS lookup on it and returns the IP Address.
     Returns None if the DNS lookup fails.
     :param dn: Domain name. Example: google.com
@@ -132,7 +132,7 @@ def dns_resolve(dn) -> "IP Address":
         addr1 = socket.gethostbyname(dn)
         return addr1
     except socket.gaierror:
-        return None
+        return "DNS Resolution Failed"
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
@@ -250,8 +250,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     if not connection:
         return None
     hostname = get_hostname(ip)
-    if hostname not in Hostnames_List:
-        Hostnames_List.append(hostname)
+    if hostname not in hostnames_List:
+        hostnames_List.append(hostname)
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
@@ -335,6 +335,10 @@ def main():
         pool.close()
         pool.join()
 
+    for hostname in hostnames_List:
+        hostname_ip = dns_resolve(hostname)
+        dns_ip[hostname] = hostname_ip
+
     audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
                                                                "LOCAL_IP",
                                                                "LOCAL_PORT",
@@ -347,6 +351,7 @@ def main():
                                                                ])
     conn_array = pd.DataFrame(connection_errors, columns=["Connection Errors"])
     auth_array = pd.DataFrame(authentication_errors, columns=["Authentication Errors"])
+    dns_array = pd.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
     writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
@@ -354,14 +359,17 @@ def main():
     wb = Workbook()
     ws1 = wb.create_sheet("Audit", 0)
     ws1.title = "Audit"
-    ws2 = wb.create_sheet("Conn_Errors", 1)
-    ws2.title = "Conn_Errors"
+    ws2 = wb.create_sheet("Audit", 1)
+    ws2.title = "DNS Resolved"
     ws3 = wb.create_sheet("Conn_Errors", 2)
-    ws3.title = "Auth_Errors"
-    ws4 = wb["Sheet"]
-    wb.remove(ws4)
+    ws3.title = "Conn_Errors"
+    ws4 = wb.create_sheet("Conn_Errors", 3)
+    ws4.title = "Auth_Errors"
+    ws5 = wb["Sheet"]
+    wb.remove(ws5)
 
     audit_array.to_excel(writer, index=False, sheet_name="Audit")
+    dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved")
     conn_array.to_excel(writer, index=False, sheet_name="Conn_Errors")
     auth_array.to_excel(writer, index=False, sheet_name="Auth_Errors")
 
@@ -375,6 +383,8 @@ def main():
     writer.sheets["Audit"].set_column(6, 6, 50)
     writer.sheets["Audit"].set_column(7, 7, 120)
     writer.sheets["Audit"].set_column(8, 8, 30)
+    writer.sheets["DNS Resolved"].set_column(0, 0, 20)
+    writer.sheets["DNS Resolved"].set_column(1, 1, 15)
     writer.sheets["Conn_Errors"].set_column(0, 0, 20)
     writer.sheets["Auth_Errors"].set_column(0, 0, 20)
     writer.save()

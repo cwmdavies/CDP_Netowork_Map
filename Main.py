@@ -124,15 +124,20 @@ def ip_check(ip) -> bool:
 def dns_resolve(dn) -> "IP Address":
     """
     Takes in a domain name and does a DNS lookup on it and returns the IP Address.
+    Saves the information in a dictionary
     Returns None if the DNS lookup fails.
     :param dn: Domain name. Example: google.com
     :return: IP Address for the domain name. Example: 192.168.1.1
     """
     try:
-        addr1 = socket.gethostbyname(dn)
-        return addr1
+        with ThreadLock:
+            log.info(f"Attempting to retrieve DNS A record for hostname: {dn}")
+            addr1 = socket.gethostbyname(dn)
+            dns_ip[dn] = addr1
     except socket.gaierror:
-        return "DNS Resolution Failed"
+        with ThreadLock:
+            log.error(f"Failed to retrieve DNS A record for hostname: {dn}")
+            dns_ip[dn] = "DNS Resolution Failed"
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
@@ -157,7 +162,7 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = ip
+        destination_address = (ip,22)
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout, )
         target = paramiko.SSHClient()
@@ -170,7 +175,7 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
             authentication_errors.append(ip)
-            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed!"
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -335,9 +340,10 @@ def main():
         pool.close()
         pool.join()
 
-    for hostname in hostnames_List:
-        hostname_ip = dns_resolve(hostname)
-        dns_ip[hostname] = hostname_ip
+        with ThreadPool(thread_count) as pool2:
+            pool2.map(dns_resolve, hostnames_List)
+            pool.close()
+            pool.join()
 
     audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
                                                                "LOCAL_IP",
@@ -383,8 +389,9 @@ def main():
     writer.sheets["Audit"].set_column(6, 6, 50)
     writer.sheets["Audit"].set_column(7, 7, 120)
     writer.sheets["Audit"].set_column(8, 8, 30)
-    writer.sheets["DNS Resolved"].set_column(0, 0, 20)
-    writer.sheets["DNS Resolved"].set_column(1, 1, 15)
+    writer.sheets["DNS Resolved"].autofilter("A1:B1")
+    writer.sheets["DNS Resolved"].set_column(0, 0, 35)
+    writer.sheets["DNS Resolved"].set_column(1, 1, 25)
     writer.sheets["Conn_Errors"].set_column(0, 0, 20)
     writer.sheets["Auth_Errors"].set_column(0, 0, 20)
     writer.save()

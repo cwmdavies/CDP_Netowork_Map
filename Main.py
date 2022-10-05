@@ -76,7 +76,7 @@ log_format = (
 if Debugging == "Off":
     logging.basicConfig(
         # Define logging level
-        level=logging.WARN,
+        level=logging.INFO,
         # Declare the object we created to format the log messages
         format=log_format,
         # Declare handlers

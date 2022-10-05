@@ -24,7 +24,6 @@ import ipaddress
 import logging
 import sys
 import time
-import multiprocessing
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 import threading

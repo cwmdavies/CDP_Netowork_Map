@@ -24,8 +24,10 @@ import ipaddress
 import logging
 import sys
 import time
+import multiprocessing
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
+import threading
 from tkinter import Tk
 import ctypes
 import pandas as pd
@@ -45,7 +47,13 @@ timeout = 15
 
 root = Tk()
 my_gui = MyGui.MyGUIClass(root)
-root.mainloop()
+
+
+def gui_func():
+    global my_gui
+    global root
+    root.mainloop()
+
 
 SiteName = my_gui.SiteName_var.get()
 Debugging = my_gui.Debugging_var.get()
@@ -76,7 +84,7 @@ log_format = (
 if Debugging == "Off":
     logging.basicConfig(
         # Define logging level
-        level=logging.WARN,
+        level=logging.INFO,
         # Declare the object we created to format the log messages
         format=log_format,
         # Declare handlers
@@ -318,6 +326,9 @@ def main():
     # Start timer.
     start = time.perf_counter()
     # Define amount of threads.
+
+    worker_thread = threading.Thread(target=gui_func)
+    worker_thread.start()
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(

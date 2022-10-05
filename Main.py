@@ -24,6 +24,7 @@ import ipaddress
 import logging
 import sys
 import time
+import multiprocessing
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 import threading
@@ -169,12 +170,12 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = (ip, 22)
+        destination_address = ip
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
+        target.connect(destination_address, port=22, username=username, password=password, sock=jump_box_channel,
                        timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
         with ThreadLock:
             log.info(f"Jump Session Function: Connection to IP: {ip} established")

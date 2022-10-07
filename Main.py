@@ -44,6 +44,7 @@ root = Tk()
 my_gui = MyGui.MyGUIClass(root)
 root.mainloop()
 
+
 SiteName = my_gui.SiteName_var.get()
 Debugging = my_gui.Debugging_var.get()
 jump_server = my_gui.JumpServer_var.get()
@@ -159,12 +160,12 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
         src_address = (local_IP_address, 22)
-        destination_address = ip
+        destination_address = (ip, 22)
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
                                                            timeout=timeout, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        target.connect(destination_address, port=22, username=username, password=password, sock=jump_box_channel,
+        target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
                        timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
         with ThreadLock:
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
@@ -314,7 +315,6 @@ def main():
     global FolderPath
     # Start timer.
     start = time.perf_counter()
-    # Define amount of threads.
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(

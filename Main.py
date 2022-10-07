@@ -2,17 +2,14 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-
 App Version: 1.7
 Tested on Python 3.10
-
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses
 of those that have been processed so no switch is connected too more than once. Each IP Address in the list
 is connected to, up to 10 at a time, to retrieve the same information. This recursion goes on until there are no
 more IP Addresses to connect to. The information is then converted to a numpy array and saved to an Excel spreadsheet.
-
 Threading is used to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
 """
@@ -26,7 +23,6 @@ import sys
 import time
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
-import threading
 from tkinter import Tk
 import ctypes
 import pandas as pd
@@ -46,12 +42,7 @@ timeout = 15
 
 root = Tk()
 my_gui = MyGui.MyGUIClass(root)
-
-
-def gui_func():
-    global my_gui
-    global root
-    root.mainloop()
+root.mainloop()
 
 
 SiteName = my_gui.SiteName_var.get()
@@ -324,10 +315,6 @@ def main():
     global FolderPath
     # Start timer.
     start = time.perf_counter()
-    # Define amount of threads.
-
-    worker_thread = threading.Thread(target=gui_func)
-    worker_thread.start()
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(

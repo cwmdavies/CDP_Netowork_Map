@@ -25,7 +25,7 @@ from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 from tkinter import Tk
 import ctypes
-import pandas as pd
+import pandas as pandas
 from openpyxl.workbook import Workbook
 import socket
 
@@ -116,16 +116,18 @@ def ip_check(ip) -> bool:
         ipaddress.ip_address(ip)
         return True
     except ValueError:
+        with ThreadLock:
+            log.error(f"ip_check function ValueError: "
+                      f"IP Address: {ip} is an invalid address. Please check and try again!")
         return False
 
 
-def dns_resolve(dn) -> "IP Address":
+def dns_resolve(dn) -> None:
     """
-    Takes in a domain name and does a DNS lookup on it and returns the IP Address.
-    Saves the information in a dictionary
-    Returns None if the DNS lookup fails.
+    Takes in a domain name and does a DNS lookup on it.
+    Saves the information to a dictionary
     :param dn: Domain name. Example: google.com
-    :return: IP Address for the domain name. Example: 192.168.1.1
+    :return: None. Saves IP Address and domain name to a dictionary. Example: {"google.com": "142.250.200.14"}
     """
     try:
         with ThreadLock:
@@ -208,11 +210,13 @@ def open_session(ip) -> "SSH Session + Connection Status":
     if not ip_check(ip):
         return None, False
     try:
-        log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+        with ThreadLock:
+            log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=username, password=password)
-        log.info(f"Open Session Function: Connected to ip Address: {ip}")
+        with ThreadLock:
+            log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
@@ -257,6 +261,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     hostname = get_hostname(ip)
     if hostname not in hostnames_List:
         hostnames_List.append(hostname)
+        with ThreadLock:
+            log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
@@ -275,6 +281,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
             if entry["MANAGEMENT_IP"] not in IP_LIST:
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
+    with ThreadLock:
+        log.info(f"Successfully retrieved CDP Details for IP: {ip}")
     ssh.close()
     if jump_box:
         jump_box.close()
@@ -295,6 +303,8 @@ def get_hostname(ip) -> "Hostname as a string":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
+    with ThreadLock:
+        log.info(f"Attempting to retrieve hostname for IP: {ip}")
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
@@ -304,8 +314,10 @@ def get_hostname(ip) -> "Hostname as a string":
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
                 hostname = result[0][0]
+                log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
-        log.error(Err)
+        with ThreadLock:
+            log.error(Err)
         hostname = "Not Found"
     ssh.close()
     if jump_box:
@@ -344,22 +356,22 @@ def main():
         pool2.close()
         pool2.join()
 
-    audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
-                                                               "LOCAL_IP",
-                                                               "LOCAL_PORT",
-                                                               "DESTINATION_HOST",
-                                                               "REMOTE_PORT",
-                                                               "MANAGEMENT_IP",
-                                                               "PLATFORM",
-                                                               "SOFTWARE_VERSION",
-                                                               "CAPABILITIES"
-                                                               ])
-    conn_array = pd.DataFrame(connection_errors, columns=["Connection Errors"])
-    auth_array = pd.DataFrame(authentication_errors, columns=["Authentication Errors"])
-    dns_array = pd.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
+    audit_array = pandas.DataFrame(collection_of_results, columns=["LOCAL_HOST",
+                                                                   "LOCAL_IP",
+                                                                   "LOCAL_PORT",
+                                                                   "DESTINATION_HOST",
+                                                                   "REMOTE_PORT",
+                                                                   "MANAGEMENT_IP",
+                                                                   "PLATFORM",
+                                                                   "SOFTWARE_VERSION",
+                                                                   "CAPABILITIES"
+                                                                   ])
+    conn_array = pandas.DataFrame(connection_errors, columns=["Connection Errors"])
+    auth_array = pandas.DataFrame(authentication_errors, columns=["Authentication Errors"])
+    dns_array = pandas.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
+    writer = pandas.ExcelWriter(filepath, engine='xlsxwriter')
 
     wb = Workbook()
     ws1 = wb.create_sheet("Audit", 0)
@@ -375,8 +387,8 @@ def main():
 
     audit_array.to_excel(writer, index=False, sheet_name="Audit")
     dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved")
-    conn_array.to_excel(writer, index=False, sheet_name="Conn_Errors")
-    auth_array.to_excel(writer, index=False, sheet_name="Auth_Errors")
+    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors")
+    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors")
 
     writer.sheets["Audit"].autofilter("A1:I1")
     writer.sheets["Audit"].set_column(0, 0, 30)
@@ -391,11 +403,13 @@ def main():
     writer.sheets["DNS Resolved"].autofilter("A1:B1")
     writer.sheets["DNS Resolved"].set_column(0, 0, 35)
     writer.sheets["DNS Resolved"].set_column(1, 1, 25)
-    writer.sheets["Conn_Errors"].set_column(0, 0, 20)
-    writer.sheets["Auth_Errors"].set_column(0, 0, 20)
-    writer.save()
+    writer.sheets["Connection Errors"].set_column(0, 0, 20)
+    writer.sheets["Authentication Errors"].set_column(0, 0, 20)
+    writer.close()
 
-    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\nFile saved in:\n{filepath}", "Info", 0x40000)
+    ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"
+                                        f"File saved in:\n"
+                                        f"{filepath}", "Info", 0x40000)
 
     # End timer.
     end = time.perf_counter()

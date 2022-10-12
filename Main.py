@@ -116,16 +116,18 @@ def ip_check(ip) -> bool:
         ipaddress.ip_address(ip)
         return True
     except ValueError:
+        with ThreadLock:
+            log.error(f"ip_check function ValueError: "
+                      f"IP Address: {ip} is an invalid address. Please check and try again!")
         return False
 
 
-def dns_resolve(dn) -> "IP Address":
+def dns_resolve(dn) -> None:
     """
-    Takes in a domain name and does a DNS lookup on it and returns the IP Address.
-    Saves the information in a dictionary
-    Returns None if the DNS lookup fails.
+    Takes in a domain name and does a DNS lookup on it.
+    Saves the information to a dictionary
     :param dn: Domain name. Example: google.com
-    :return: IP Address for the domain name. Example: 192.168.1.1
+    :return: None. Saves IP Address and domain name to a dictionary. Example: {"google.com": "142.250.200.14"}
     """
     try:
         with ThreadLock:
@@ -208,11 +210,13 @@ def open_session(ip) -> "SSH Session + Connection Status":
     if not ip_check(ip):
         return None, False
     try:
-        log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+        with ThreadLock:
+            log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=username, password=password)
-        log.info(f"Open Session Function: Connected to ip Address: {ip}")
+        with ThreadLock:
+            log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
         with ThreadLock:
@@ -257,6 +261,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     hostname = get_hostname(ip)
     if hostname not in hostnames_List:
         hostnames_List.append(hostname)
+        with ThreadLock:
+            log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
@@ -275,6 +281,8 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
             if entry["MANAGEMENT_IP"] not in IP_LIST:
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
+    with ThreadLock:
+        log.info(f"Successfully retrieved CDP Details for IP: {ip}")
     ssh.close()
     if jump_box:
         jump_box.close()
@@ -295,6 +303,8 @@ def get_hostname(ip) -> "Hostname as a string":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
+    with ThreadLock:
+        log.info(f"Attempting to retrieve hostname for IP: {ip}")
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
@@ -304,8 +314,10 @@ def get_hostname(ip) -> "Hostname as a string":
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
                 hostname = result[0][0]
+                log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
-        log.error(Err)
+        with ThreadLock:
+            log.error(Err)
         hostname = "Not Found"
     ssh.close()
     if jump_box:

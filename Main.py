@@ -25,7 +25,7 @@ from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 from tkinter import Tk
 import ctypes
-import pandas as pd
+import pandas as pandas
 from openpyxl.workbook import Workbook
 import socket
 
@@ -356,7 +356,7 @@ def main():
         pool2.close()
         pool2.join()
 
-    audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
+    audit_array = pandas.DataFrame(collection_of_results, columns=["LOCAL_HOST",
                                                                "LOCAL_IP",
                                                                "LOCAL_PORT",
                                                                "DESTINATION_HOST",
@@ -366,12 +366,12 @@ def main():
                                                                "SOFTWARE_VERSION",
                                                                "CAPABILITIES"
                                                                ])
-    conn_array = pd.DataFrame(connection_errors, columns=["Connection Errors"])
-    auth_array = pd.DataFrame(authentication_errors, columns=["Authentication Errors"])
-    dns_array = pd.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
+    conn_array = pandas.DataFrame(connection_errors, columns=["Connection Errors"])
+    auth_array = pandas.DataFrame(authentication_errors, columns=["Authentication Errors"])
+    dns_array = pandas.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
+    writer = pandas.ExcelWriter(filepath, engine='xlsxwriter')
 
     wb = Workbook()
     ws1 = wb.create_sheet("Audit", 0)

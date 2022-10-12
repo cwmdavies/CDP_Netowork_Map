@@ -387,8 +387,8 @@ def main():
 
     audit_array.to_excel(writer, index=False, sheet_name="Audit")
     dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved")
-    conn_array.to_excel(writer, index=False, sheet_name="Conn_Errors")
-    auth_array.to_excel(writer, index=False, sheet_name="Auth_Errors")
+    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors")
+    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors")
 
     writer.sheets["Audit"].autofilter("A1:I1")
     writer.sheets["Audit"].set_column(0, 0, 30)
@@ -403,9 +403,9 @@ def main():
     writer.sheets["DNS Resolved"].autofilter("A1:B1")
     writer.sheets["DNS Resolved"].set_column(0, 0, 35)
     writer.sheets["DNS Resolved"].set_column(1, 1, 25)
-    writer.sheets["Conn_Errors"].set_column(0, 0, 20)
-    writer.sheets["Auth_Errors"].set_column(0, 0, 20)
-    writer.save()
+    writer.sheets["Connection Errors"].set_column(0, 0, 20)
+    writer.sheets["Authentication Errors"].set_column(0, 0, 20)
+    writer.close()
 
     ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"
                                         f"File saved in:\n"

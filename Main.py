@@ -129,13 +129,15 @@ def dns_resolve(dn) -> "IP Address":
     """
     try:
         with ThreadLock:
-            log.info(f"Attempting to retrieve DNS A record for hostname: {dn}")
-            addr1 = socket.gethostbyname(dn)
-            dns_ip[dn] = addr1
+            log.info(f"Attempting to retrieve DNS 'A' record for hostname: {dn}")
+        addr1 = socket.gethostbyname(dn)
+        dns_ip[dn] = addr1
+        with ThreadLock:
+            log.info(f"Successfully retrieved DNS 'A' record for hostname: {dn}")
     except socket.gaierror:
         with ThreadLock:
             log.error(f"Failed to retrieve DNS A record for hostname: {dn}")
-            dns_ip[dn] = "DNS Resolution Failed"
+        dns_ip[dn] = "DNS Resolution Failed"
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
@@ -165,8 +167,8 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
                                                            timeout=timeout, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        target.connect(destination_address, username=username, password=password, sock=jump_box_channel,
-                       timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
+        target.connect(hostname=ip, username=username, password=password,
+                       sock=jump_box_channel, timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
         with ThreadLock:
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
@@ -337,10 +339,10 @@ def main():
         pool.close()
         pool.join()
 
-        with ThreadPool(thread_count) as pool2:
-            pool2.map(dns_resolve, hostnames_List)
-            pool.close()
-            pool.join()
+    with ThreadPool(thread_count) as pool2:
+        pool2.map(dns_resolve, hostnames_List)
+        pool2.close()
+        pool2.join()
 
     audit_array = pd.DataFrame(collection_of_results, columns=["LOCAL_HOST",
                                                                "LOCAL_IP",

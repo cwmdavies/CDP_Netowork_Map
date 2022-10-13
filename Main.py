@@ -28,6 +28,7 @@ import ctypes
 import pandas as pandas
 from openpyxl.workbook import Workbook
 import socket
+import os
 
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
@@ -175,25 +176,25 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-            authentication_errors.append(ip)
+        authentication_errors.append(ip)
+        with ThreadLock:
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
-            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!")
-            log.error(f"{err}")
+            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}")
         return None, None, False
 
 
@@ -218,26 +219,25 @@ def direct_session(ip) -> "SSH Session + Connection Status":
             log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
+        authentication_errors.append(ip)
         with ThreadLock:
-            authentication_errors.append(ip)
             log.error(f"Open Session Function: "
                       f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
         return None, False
     except Exception as err:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
-            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
-            log.error(f"\t Error: {err}")
+            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}")
         return None, False
 
 
@@ -336,7 +336,7 @@ def main():
         f"{IPAddr2}\nNo valid IP Address was found.")
 
     # Start the CDP recursive lookup on the network and save the results.
-    thread_count = 10
+    thread_count = os.cpu_count()
     with ThreadPool(thread_count) as pool:
         i = 0
         while i < len(IP_LIST):

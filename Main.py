@@ -198,7 +198,7 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
         return None, None, False
 
 
-def open_session(ip) -> "SSH Session + Connection Status":
+def direct_session(ip) -> "SSH Session + Connection Status":
     """
     Takes in an IP Address as a string.
     Connects to the IP address directly using SSH.
@@ -253,7 +253,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     """
     jump_box = None
     if jump_server == "None":
-        ssh, connection = open_session(ip)
+        ssh, connection = direct_session(ip)
     else:
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
@@ -298,7 +298,7 @@ def get_hostname(ip) -> "Hostname as a string":
     """
     jump_box = None
     if jump_server == "None":
-        ssh, connection = open_session(ip)
+        ssh, connection = direct_session(ip)
     else:
         ssh, jump_box, connection = jump_session(ip)
     if not connection:

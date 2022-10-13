@@ -122,24 +122,24 @@ def ip_check(ip) -> bool:
         return False
 
 
-def dns_resolve(dn) -> None:
+def dns_resolve(domain_name) -> None:
     """
     Takes in a domain name and does a DNS lookup on it.
     Saves the information to a dictionary
-    :param dn: Domain name. Example: google.com
+    :param domain_name: Domain name. Example: google.com
     :return: None. Saves IP Address and domain name to a dictionary. Example: {"google.com": "142.250.200.14"}
     """
     try:
         with ThreadLock:
-            log.info(f"Attempting to retrieve DNS 'A' record for hostname: {dn}")
-        addr1 = socket.gethostbyname(dn)
-        dns_ip[dn] = addr1
+            log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
+        addr1 = socket.gethostbyname(domain_name)
+        dns_ip[domain_name] = addr1
         with ThreadLock:
-            log.info(f"Successfully retrieved DNS 'A' record for hostname: {dn}")
+            log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
         with ThreadLock:
-            log.error(f"Failed to retrieve DNS A record for hostname: {dn}")
-        dns_ip[dn] = "DNS Resolution Failed"
+            log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}")
+        dns_ip[domain_name] = "DNS Resolution Failed"
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":

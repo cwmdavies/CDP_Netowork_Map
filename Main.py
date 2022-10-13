@@ -175,7 +175,6 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        with ThreadLock:
             authentication_errors.append(ip)
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
                       f"Please check your ip, username and password.")

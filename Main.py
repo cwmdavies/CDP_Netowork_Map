@@ -84,8 +84,7 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
-    paramiko_logger = paramiko.util.logging.getLogger()
-    paramiko_logger.setLevel(logging.WARN)
+    logging.getLogger("paramiko").setLevel(logging.ERROR)
 elif Debugging == "On":
     logging.basicConfig(
         # Define logging level

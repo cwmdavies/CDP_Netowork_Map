@@ -2,7 +2,7 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-App Version: 1.7
+App Version: 1.8
 Tested on Python 3.10
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
@@ -84,6 +84,8 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
+    paramiko_logger = paramiko.util.logging.getLogger()
+    paramiko_logger.setLevel(logging.WARN)
 elif Debugging == "On":
     logging.basicConfig(
         # Define logging level

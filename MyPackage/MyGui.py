@@ -129,7 +129,6 @@ class MyGUIClass:
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
 
-
 """
 Example Code
 

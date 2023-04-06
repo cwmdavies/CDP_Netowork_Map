@@ -25,7 +25,7 @@ from multiprocessing.pool import ThreadPool
 from multiprocessing import Lock
 from tkinter import Tk
 import ctypes
-import pandas as pandas
+import pandas
 import openpyxl
 import socket
 import os

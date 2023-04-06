@@ -8,7 +8,7 @@ class MyGUIClass:
     def __init__(self, master):
         super().__init__()
         self.master = master
-        master.title("CDP Network Auditor: V1.8")
+        master.title("CDP Network Auditor: V2.0")
         master.resizable(False, True)
         master.protocol('WM_DELETE_WINDOW', self.quit_script)
 
@@ -128,7 +128,6 @@ class MyGUIClass:
     def get_folder_path(self):
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
-
 
 """
 Example Code

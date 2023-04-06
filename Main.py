@@ -2,13 +2,13 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-App Version: 1.7
-Tested on Python 3.10
+App Version: 2.0
+Tested on Python 3.11
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses
-of those that have been processed so no switch is connected too more than once. Each IP Address in the list
-is connected to, up to 10 at a time, to retrieve the same information. This recursion goes on until there are no
+of those that have been processed so no switch is connected too more than once. A connection is made to each IP Address
+in the list , using threading, to retrieve the same information. This recursion goes on until there are no
 more IP Addresses to connect to. The information is then converted to a numpy array and saved to an Excel spreadsheet.
 Threading is used to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
@@ -26,9 +26,13 @@ from multiprocessing import Lock
 from tkinter import Tk
 import ctypes
 import pandas as pandas
-from openpyxl.workbook import Workbook
+import openpyxl
 import socket
+import os
+import datetime
+import shutil
 
+EXCEL_TEMPLATE = "1 - CDP Switch Audit _ Template.xlsx"
 local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
 hostnames_List = []
@@ -39,6 +43,9 @@ collection_of_results = []
 index = 2
 ThreadLock = Lock()
 timeout = 15
+DATE_TIME_NOW = datetime.datetime.now()
+DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
+TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
 
 root = Tk()
 my_gui = MyGui.MyGUIClass(root)
@@ -83,6 +90,7 @@ if Debugging == "Off":
             logging.StreamHandler(sys.stdout),
         ]
     )
+    logging.getLogger("paramiko").setLevel(logging.ERROR)
 elif Debugging == "On":
     logging.basicConfig(
         # Define logging level
@@ -175,26 +183,25 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
+        authentication_errors.append(ip)
         with ThreadLock:
-            authentication_errors.append(ip)
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
-            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!")
-            log.error(f"{err}")
+            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}")
         return None, None, False
 
 
@@ -219,26 +226,25 @@ def direct_session(ip) -> "SSH Session + Connection Status":
             log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
+        authentication_errors.append(ip)
         with ThreadLock:
-            authentication_errors.append(ip)
             log.error(f"Open Session Function: "
                       f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
             log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
         return None, False
     except Exception as err:
+        connection_errors.append(ip)
         with ThreadLock:
-            connection_errors.append(ip)
-            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!")
-            log.error(f"\t Error: {err}")
+            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}")
         return None, False
 
 
@@ -337,7 +343,7 @@ def main():
         f"{IPAddr2}\nNo valid IP Address was found.")
 
     # Start the CDP recursive lookup on the network and save the results.
-    thread_count = 10
+    thread_count = os.cpu_count()
     with ThreadPool(thread_count) as pool:
         i = 0
         while i < len(IP_LIST):
@@ -371,40 +377,25 @@ def main():
     dns_array = pandas.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    writer = pandas.ExcelWriter(filepath, engine='xlsxwriter')
+    excel_template = f"{os.getcwd()}\\1 - CDP Switch Audit _ Template.xlsx"
+    shutil.copy2(src=excel_template, dst=filepath)
 
-    wb = Workbook()
-    ws1 = wb.create_sheet("Audit", 0)
-    ws1.title = "Audit"
-    ws2 = wb.create_sheet("Audit", 1)
-    ws2.title = "DNS Resolved"
-    ws3 = wb.create_sheet("Conn_Errors", 2)
-    ws3.title = "Conn_Errors"
-    ws4 = wb.create_sheet("Conn_Errors", 3)
-    ws4.title = "Auth_Errors"
-    ws5 = wb["Sheet"]
-    wb.remove(ws5)
+    wb = openpyxl.load_workbook(filepath)
+    ws1 = wb["Audit"]
+    ws1["B4"] = SiteName
+    ws1["B5"] = DATE_NOW
+    ws1["B6"] = TIME_NOW
+    ws1["B7"] = IPAddr1
+    ws1["B8"] = IPAddr2
+    wb.save(filepath)
+    wb.close()
 
-    audit_array.to_excel(writer, index=False, sheet_name="Audit")
-    dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved")
-    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors")
-    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors")
+    writer = pandas.ExcelWriter(filepath, engine='openpyxl', if_sheet_exists="overlay", mode="a")
+    audit_array.to_excel(writer, index=False, sheet_name="Audit", header=False, startrow=11)
+    dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved", header=False, startrow=1)
+    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors", header=False, startrow=1)
+    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors", header=False, startrow=1)
 
-    writer.sheets["Audit"].autofilter("A1:I1")
-    writer.sheets["Audit"].set_column(0, 0, 30)
-    writer.sheets["Audit"].set_column(1, 1, 30)
-    writer.sheets["Audit"].set_column(2, 2, 30)
-    writer.sheets["Audit"].set_column(3, 3, 30)
-    writer.sheets["Audit"].set_column(4, 4, 30)
-    writer.sheets["Audit"].set_column(5, 5, 30)
-    writer.sheets["Audit"].set_column(6, 6, 50)
-    writer.sheets["Audit"].set_column(7, 7, 120)
-    writer.sheets["Audit"].set_column(8, 8, 30)
-    writer.sheets["DNS Resolved"].autofilter("A1:B1")
-    writer.sheets["DNS Resolved"].set_column(0, 0, 35)
-    writer.sheets["DNS Resolved"].set_column(1, 1, 25)
-    writer.sheets["Connection Errors"].set_column(0, 0, 20)
-    writer.sheets["Authentication Errors"].set_column(0, 0, 20)
     writer.close()
 
     ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"

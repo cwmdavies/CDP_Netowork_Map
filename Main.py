@@ -55,8 +55,10 @@ root.mainloop()
 SiteName = my_gui.SiteName_var.get()
 Debugging = my_gui.Debugging_var.get()
 jump_server = my_gui.JumpServer_var.get()
-username = my_gui.Username_var.get()
-password = my_gui.password_var.get()
+_USERNAME = my_gui.Username_var.get()
+_PASSWORD = my_gui.password_var.get()
+A_USERNAME = "answer"
+A_PASSWORD = my_gui.answer_password_var.get()
 IPAddr1 = my_gui.IP_Address1_var.get()
 IPAddr2 = my_gui.IP_Address2_var.get()
 FolderPath = my_gui.FolderPath_var.get()
@@ -150,12 +152,14 @@ def dns_resolve(domain_name) -> None:
         DNS_IP[domain_name] = "DNS Resolution Failed"
 
 
-def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
+def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + Jump Session + Connection Status":
     """
     Takes in an IP Address as a string.
     Connects to the IP address through a jump host using SSH.
     Returns the SSH session, The jump Session and
     a boolean value that represents the state of the connection.
+    :param username:
+    :param password:
     :param ip: The IP Address you wish to connect to.
     :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
@@ -221,7 +225,7 @@ def direct_session(ip) -> "SSH Session + Connection Status":
             log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username=username, password=password)
+        ssh.connect(hostname=ip, port=22, username=_USERNAME, password=_PASSWORD)
         with THREADLOCK:
             log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True

@@ -37,6 +37,12 @@ class MyGUIClass:
         self.password_entry = Entry(self.Site_details, textvariable=self.password_var, show="*")
         self.password_entry.pack(fill='x', expand=True)
 
+        self.answer_password_var = StringVar()
+        self.answer_password_var_label = Label(self.Site_details, text="\nAnswer Password: (Required)", anchor="w")
+        self.answer_password_var_label.pack(fill='x', expand=True)
+        self.answer_password_var_entry = Entry(self.Site_details, textvariable=self.answer_password_var, show="*")
+        self.answer_password_var_entry.pack(fill='x', expand=True)
+
         self.IP_Address1_var = StringVar()
         self.IP_Address1_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
         self.IP_Address1_label.pack(fill='x', expand=True)

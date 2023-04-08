@@ -58,7 +58,7 @@ jump_server = my_gui.JumpServer_var.get()
 _USERNAME = my_gui.Username_var.get()
 _PASSWORD = my_gui.password_var.get()
 A_USERNAME = "answer"
-A_PASSWORD = my_gui.answer_password_var.get()
+A_PASSWORD = my_gui.Answer_password_var.get()
 IPAddr1 = my_gui.IP_Address1_var.get()
 IPAddr2 = my_gui.IP_Address2_var.get()
 FolderPath = my_gui.FolderPath_var.get()
@@ -252,12 +252,14 @@ def direct_session(ip) -> "SSH Session + Connection Status":
         return None, False
 
 
-def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
+def get_cdp_details(ip, username=_USERNAME, password=_PASSWORD) -> "None, appends dictionaries to a global list":
     """
     Takes in an IP Address as a string.
     Connects to the host's IP Address and runs the 'show cdp neighbors detail'
     command and parses the output using TextFSM and saves it to a list of dicts.
     Returns None.
+    :param password:
+    :param username:
     :param ip: The IP Address you wish to connect to.
     :return: None, appends dictionaries to a global list.
     """
@@ -265,7 +267,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     if jump_server == "None":
         ssh, connection = direct_session(ip)
     else:
-        ssh, jump_box, connection = jump_session(ip)
+        ssh, jump_box, connection = jump_session(ip, username, password)
     if not connection:
         return None
     hostname = get_hostname(ip)
@@ -365,6 +367,10 @@ def main():
         pool2.map(dns_resolve, HOSTNAMES)
         pool2.close()
         pool2.join()
+
+    if len(AUTHENTICATION_ERRORS) != 0:
+        for ip_address in AUTHENTICATION_ERRORS:
+            get_cdp_details(ip_address, A_USERNAME, A_PASSWORD)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",

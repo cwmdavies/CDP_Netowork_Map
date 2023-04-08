@@ -105,7 +105,8 @@ class MyGUIClass:
                     self.password_var.get() and
                     ipaddress.ip_address(self.IP_Address1_var.get()) and
                     self.SiteName_var.get() and
-                    self.FolderPath_var.get()
+                    self.FolderPath_var.get() and
+                    self.answer_password_var
                     ):
                 if self.IP_Address2_var.get():
                     ipaddress.ip_address(self.IP_Address2_var.get())

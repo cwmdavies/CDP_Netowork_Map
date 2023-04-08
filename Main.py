@@ -33,16 +33,16 @@ import datetime
 import shutil
 
 EXCEL_TEMPLATE = "1 - CDP Switch Audit _ Template.xlsx"
-local_IP_address = '127.0.0.1'  # ip Address of the machine you are connecting from
+LOCAL_IP_ADDRESS = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
-hostnames_List = []
-dns_ip = {}
-connection_errors = []
-authentication_errors = []
-collection_of_results = []
-index = 2
-ThreadLock = Lock()
-timeout = 15
+HOSTNAMES = []
+DNS_IP = {}
+CONNECTION_ERRORS = []
+AUTHENTICATION_ERRORS = []
+COLLECTION_OF_RESULTS = []
+INDEX = 2
+THREADLOCK = Lock()
+TIMEOUT = 15
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
 TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
@@ -124,7 +124,7 @@ def ip_check(ip) -> bool:
         ipaddress.ip_address(ip)
         return True
     except ValueError:
-        with ThreadLock:
+        with THREADLOCK:
             log.error(f"ip_check function ValueError: "
                       f"IP Address: {ip} is an invalid address. Please check and try again!")
         return False
@@ -138,16 +138,16 @@ def dns_resolve(domain_name) -> None:
     :return: None. Saves IP Address and domain name to a dictionary. Example: {"google.com": "142.250.200.14"}
     """
     try:
-        with ThreadLock:
+        with THREADLOCK:
             log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
         addr1 = socket.gethostbyname(domain_name)
-        dns_ip[domain_name] = addr1
-        with ThreadLock:
+        DNS_IP[domain_name] = addr1
+        with THREADLOCK:
             log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
-        with ThreadLock:
+        with THREADLOCK:
             log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}")
-        dns_ip[domain_name] = "DNS Resolution Failed"
+        DNS_IP[domain_name] = "DNS Resolution Failed"
 
 
 def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
@@ -160,47 +160,47 @@ def jump_session(ip) -> "SSH Session + Jump Session + Connection Status":
     :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
     if not ip_check(ip):
-        with ThreadLock:
+        with THREADLOCK:
             log.error(f"open_session function error: "
                       f"ip Address {ip} is not a valid Address. Please check and restart the script!", )
         return None, None, False
     try:
-        with ThreadLock:
+        with THREADLOCK:
             log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         jump_box.connect(jump_server, username=username, password=password)
         jump_box_transport = jump_box.get_transport()
-        src_address = (local_IP_address, 22)
+        src_address = (LOCAL_IP_ADDRESS, 22)
         destination_address = (ip, 22)
         jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
-                                                           timeout=timeout, )
+                                                           timeout=TIMEOUT, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         target.connect(hostname=ip, username=username, password=password,
-                       sock=jump_box_channel, timeout=timeout, auth_timeout=timeout, banner_timeout=timeout)
-        with ThreadLock:
+                       sock=jump_box_channel, timeout=TIMEOUT, auth_timeout=TIMEOUT, banner_timeout=TIMEOUT)
+        with THREADLOCK:
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        authentication_errors.append(ip)
-        with ThreadLock:
+        AUTHENTICATION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
                       f"Please check your ip, username and password.")
         return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
         return None, None, False
     except Exception as err:
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}")
         return None, None, False
 
@@ -217,33 +217,33 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     if not ip_check(ip):
         return None, False
     try:
-        with ThreadLock:
+        with THREADLOCK:
             log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=username, password=password)
-        with ThreadLock:
+        with THREADLOCK:
             log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        authentication_errors.append(ip)
-        with ThreadLock:
+        AUTHENTICATION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Open Session Function: "
                       f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
         return None, False
     except Exception as err:
-        connection_errors.append(ip)
-        with ThreadLock:
+        CONNECTION_ERRORS.append(ip)
+        with THREADLOCK:
             log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}")
         return None, False
 
@@ -265,14 +265,14 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     if not connection:
         return None
     hostname = get_hostname(ip)
-    if hostname not in hostnames_List:
-        hostnames_List.append(hostname)
-        with ThreadLock:
+    if hostname not in HOSTNAMES:
+        HOSTNAMES.append(hostname)
+        with THREADLOCK:
             log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
-        with ThreadLock:
+        with THREADLOCK:
             with open("textfsm/cisco_ios_show_cdp_neighbors_detail.textfsm") as f:
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
@@ -283,11 +283,11 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
             text = entry['DESTINATION_HOST']
             head, sep, tail = text.partition('.')
             entry['DESTINATION_HOST'] = head.upper()
-            collection_of_results.append(entry)
+            COLLECTION_OF_RESULTS.append(entry)
             if entry["MANAGEMENT_IP"] not in IP_LIST:
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
-    with ThreadLock:
+    with THREADLOCK:
         log.info(f"Successfully retrieved CDP Details for IP: {ip}")
     ssh.close()
     if jump_box:
@@ -309,20 +309,20 @@ def get_hostname(ip) -> "Hostname as a string":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
-    with ThreadLock:
+    with THREADLOCK:
         log.info(f"Attempting to retrieve hostname for IP: {ip}")
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
     try:
-        with ThreadLock:
+        with THREADLOCK:
             with open("textfsm/hostname.textfsm") as f:
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
                 hostname = result[0][0]
                 log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
-        with ThreadLock:
+        with THREADLOCK:
             log.error(Err)
         hostname = "Not Found"
     ssh.close()
@@ -358,11 +358,11 @@ def main():
         pool.join()
 
     with ThreadPool(thread_count) as pool2:
-        pool2.map(dns_resolve, hostnames_List)
+        pool2.map(dns_resolve, HOSTNAMES)
         pool2.close()
         pool2.join()
 
-    audit_array = pandas.DataFrame(collection_of_results, columns=["LOCAL_HOST",
+    audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
                                                                    "LOCAL_PORT",
                                                                    "DESTINATION_HOST",
@@ -372,9 +372,9 @@ def main():
                                                                    "SOFTWARE_VERSION",
                                                                    "CAPABILITIES"
                                                                    ])
-    conn_array = pandas.DataFrame(connection_errors, columns=["Connection Errors"])
-    auth_array = pandas.DataFrame(authentication_errors, columns=["Authentication Errors"])
-    dns_array = pandas.DataFrame(dns_ip.items(), columns=["Hostname", "IP Address"])
+    conn_array = pandas.DataFrame(CONNECTION_ERRORS, columns=["Connection Errors"])
+    auth_array = pandas.DataFrame(AUTHENTICATION_ERRORS, columns=["Authentication Errors"])
+    dns_array = pandas.DataFrame(DNS_IP.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
     excel_template = f"{os.getcwd()}\\1 - CDP Switch Audit _ Template.xlsx"

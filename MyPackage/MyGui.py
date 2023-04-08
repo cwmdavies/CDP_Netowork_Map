@@ -37,6 +37,12 @@ class MyGUIClass:
         self.password_entry = Entry(self.Site_details, textvariable=self.password_var, show="*")
         self.password_entry.pack(fill='x', expand=True)
 
+        self.answer_password_var = StringVar()
+        self.answer_password_label = Label(self.Site_details, text="\nAnswer Password: (Required)", anchor="w")
+        self.answer_password_label.pack(fill='x', expand=True)
+        self.answer_password_entry = Entry(self.Site_details, textvariable=self.answer_password_var, show="*")
+        self.answer_password_entry.pack(fill='x', expand=True)
+
         self.IP_Address1_var = StringVar()
         self.IP_Address1_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
         self.IP_Address1_label.pack(fill='x', expand=True)
@@ -99,13 +105,15 @@ class MyGUIClass:
                     self.password_var.get() and
                     ipaddress.ip_address(self.IP_Address1_var.get()) and
                     self.SiteName_var.get() and
-                    self.FolderPath_var.get()
+                    self.FolderPath_var.get() and
+                    self.answer_password_var.get()
                     ):
                 if self.IP_Address2_var.get():
                     ipaddress.ip_address(self.IP_Address2_var.get())
                 self.Site_Name_entry.config(state="disabled")
                 self.Username_entry.config(state="disabled")
                 self.password_entry.config(state="disabled")
+                self.answer_password_entry.config(state="disabled")
                 self.IP_Address1_entry.config(state="disabled")
                 self.IP_Address2_entry.config(state="disabled")
                 self.FolderPath_entry.config(state="disabled")

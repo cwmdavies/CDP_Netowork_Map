@@ -37,8 +37,20 @@ class MyGUIClass:
         self.password_entry = Entry(self.Site_details, textvariable=self.password_var, show="*")
         self.password_entry.pack(fill='x', expand=True)
 
+        self.answer_redo_var = StringVar()
+        self.answer_redo_var.set("Yes")
+        self.answer_redo_label = Label(self.Site_details, text="\nRetry Auth Errors with Answer Creds:", anchor="w")
+        self.answer_redo_label.pack(fill='x', expand=True)
+        self.answer_redo = ttk.Combobox(self.Site_details,
+                                        values=["Yes", "No"],
+                                        state="readonly", textvariable=self.answer_redo_var,
+                                        )
+        self.answer_redo.current(0)
+        self.answer_redo.pack(fill='x', expand=True)
+
         self.answer_password_var = StringVar()
-        self.answer_password_label = Label(self.Site_details, text="\nAnswer Password: (Required)", anchor="w")
+        self.answer_password_label = Label(self.Site_details,
+                                           text="\nAnswer Password: (Required, if above is set to yes)", anchor="w")
         self.answer_password_label.pack(fill='x', expand=True)
         self.answer_password_entry = Entry(self.Site_details, textvariable=self.answer_password_var, show="*")
         self.answer_password_entry.pack(fill='x', expand=True)
@@ -99,20 +111,33 @@ class MyGUIClass:
         # sets the required fields and checks the IP addresses are valid.
         # Second IP Address field is only checked if it's filled in.
         try:
-            if (
-                    self.Username_var.get() and
-                    self.SiteName_var.get() and
-                    self.password_var.get() and
-                    ipaddress.ip_address(self.IP_Address1_var.get()) and
-                    self.SiteName_var.get() and
-                    self.FolderPath_var.get() and
-                    self.answer_password_var.get()
-                    ):
-                if self.IP_Address2_var.get():
-                    ipaddress.ip_address(self.IP_Address2_var.get())
+            if not self.Site_Name_entry.get():
+                showerror(f"Error", "Site Name field is empty\n"
+                                    "Please check and try again!")
+            elif not self.Username_var.get():
+                showerror(f"Error", "Username field is empty\n"
+                                    "Please check and try again!")
+            elif not self.password_var.get():
+                showerror(f"Error", "Password field is empty\n"
+                                    "Please check and try again!")
+            elif self.answer_redo_var.get() == "Yes" and not self.answer_password_var.get():
+                showerror(f"Error", "Answer Password field is empty\n"
+                                    "Please check and try again!")
+
+            elif not ipaddress.ip_address(self.IP_Address1_var.get()):
+                showerror(f"Error", "Core Switch 1 field is empty or IP is invalid\n"
+                                    "Please check and try again!")
+            elif self.IP_Address2_var.get() and not ipaddress.ip_address(self.IP_Address2_var.get()):
+                showerror(f"Error", "Core Switch 1 IP is invalid\n"
+                                    "Please check and try again!")
+            elif not self.FolderPath_var.get():
+                showerror(f"Error", "Results file location field is empty\n"
+                                    "Please check and try again!")
+            else:
                 self.Site_Name_entry.config(state="disabled")
                 self.Username_entry.config(state="disabled")
                 self.password_entry.config(state="disabled")
+                self.answer_redo.config(state="disabled")
                 self.answer_password_entry.config(state="disabled")
                 self.IP_Address1_entry.config(state="disabled")
                 self.IP_Address2_entry.config(state="disabled")
@@ -125,17 +150,15 @@ class MyGUIClass:
                                         "and may take a few minutes\n"
                                         "You will be notified upon completion!")
                 self.master.destroy()
-                pass
-            else:
-                showerror(f"Error", "A required field is empty\n"
-                                    "Please check and try again!")
+
         except ValueError:
-            showerror(f"Error", "The IP Address you provided is invalid\n"
+            showerror(f"Error", "One of the IP Addresses you provided is invalid\n"
                                 "Please check and try again!")
 
     def get_folder_path(self):
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
+
 
 """
 Example Code

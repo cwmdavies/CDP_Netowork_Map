@@ -59,6 +59,7 @@ _USERNAME = my_gui.Username_var.get()
 _PASSWORD = my_gui.password_var.get()
 A_USERNAME = "answer"
 A_PASSWORD = my_gui.answer_password_var.get()
+ANSWER_REDO = my_gui.answer_redo_var.get()
 IPAddr1 = my_gui.IP_Address1_var.get()
 IPAddr2 = my_gui.IP_Address2_var.get()
 FolderPath = my_gui.FolderPath_var.get()
@@ -368,9 +369,10 @@ def main():
         pool2.close()
         pool2.join()
 
-    if len(AUTHENTICATION_ERRORS) != 0:
-        for ip_address in AUTHENTICATION_ERRORS:
-            get_cdp_details(ip_address, A_USERNAME, A_PASSWORD)
+    if ANSWER_REDO == "Yes":
+        if len(AUTHENTICATION_ERRORS) != 0:
+            for ip_address in AUTHENTICATION_ERRORS:
+                get_cdp_details(ip_address, A_USERNAME, A_PASSWORD)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",

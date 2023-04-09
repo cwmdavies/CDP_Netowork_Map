@@ -1,4 +1,4 @@
-from tkinter import ttk, Label, Button, Entry, StringVar, filedialog, Tk
+from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
@@ -150,7 +150,6 @@ class MyGUIClass:
                                         "and may take a few minutes\n"
                                         "You will be notified upon completion!")
                 self.master.destroy()
-                pass
 
         except ValueError:
             showerror(f"Error", "One of the IP Addresses you provided is invalid\n"
@@ -163,7 +162,8 @@ class MyGUIClass:
 
 """
 Example Code
-"""
+
 root = Tk()
 my_gui = MyGUIClass(root)
 root.mainloop()
+"""

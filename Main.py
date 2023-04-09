@@ -404,9 +404,9 @@ def main():
 
     writer = pandas.ExcelWriter(filepath, engine='openpyxl', if_sheet_exists="overlay", mode="a")
     audit_array.to_excel(writer, index=False, sheet_name="Audit", header=False, startrow=11)
-    dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved", header=False, startrow=1)
-    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors", header=False, startrow=1)
-    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors", header=False, startrow=1)
+    dns_array.to_excel(writer, index=False, sheet_name="DNS Resolved", header=False, startrow=4)
+    conn_array.to_excel(writer, index=False, sheet_name="Connection Errors", header=False, startrow=4)
+    auth_array.to_excel(writer, index=False, sheet_name="Authentication Errors", header=False, startrow=4)
 
     writer.close()
 

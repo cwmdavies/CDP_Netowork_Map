@@ -22,7 +22,7 @@ import logging
 import sys
 import time
 from multiprocessing.pool import ThreadPool
-from multiprocessing import Lock
+import multiprocessing
 from tkinter import Tk
 import ctypes
 import pandas
@@ -41,7 +41,7 @@ CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
 INDEX = 2
-THREADLOCK = Lock()
+THREADLOCK = multiprocessing.Lock()
 TIMEOUT = 15
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
@@ -174,7 +174,7 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
             log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        jump_box.connect(jump_server, username=username, password=password)
+        jump_box.connect(jump_server, username=_USERNAME, password=_PASSWORD)
         jump_box_transport = jump_box.get_transport()
         src_address = (LOCAL_IP_ADDRESS, 22)
         destination_address = (ip, 22)
@@ -188,11 +188,24 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        AUTHENTICATION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
-                      f"Please check your ip, username and password.")
-        return None, None, False
+        if ANSWER_REDO == "Yes":
+            if ip not in AUTHENTICATION_ERRORS:
+                AUTHENTICATION_ERRORS.append(ip)
+                with THREADLOCK:
+                    log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
+                              f"Retrying using 'answer' credentials.")
+                jump_session(ip, A_USERNAME, A_PASSWORD)
+            elif ip in AUTHENTICATION_ERRORS:
+                with THREADLOCK:
+                    log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
+                              f"Please check your ip, username and password.")
+                return None, None, False
+        else:
+            AUTHENTICATION_ERRORS.append(ip)
+            with THREADLOCK:
+                log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
+                          f"Please check your ip, username and password.")
+            return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
@@ -253,14 +266,12 @@ def direct_session(ip) -> "SSH Session + Connection Status":
         return None, False
 
 
-def get_cdp_details(ip, username=_USERNAME, password=_PASSWORD) -> "None, appends dictionaries to a global list":
+def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     """
     Takes in an IP Address as a string.
     Connects to the host's IP Address and runs the 'show cdp neighbors detail'
     command and parses the output using TextFSM and saves it to a list of dicts.
     Returns None.
-    :param password:
-    :param username:
     :param ip: The IP Address you wish to connect to.
     :return: None, appends dictionaries to a global list.
     """
@@ -268,7 +279,7 @@ def get_cdp_details(ip, username=_USERNAME, password=_PASSWORD) -> "None, append
     if jump_server == "None":
         ssh, connection = direct_session(ip)
     else:
-        ssh, jump_box, connection = jump_session(ip, username, password)
+        ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
     hostname = get_hostname(ip)
@@ -368,11 +379,6 @@ def main():
         pool2.map(dns_resolve, HOSTNAMES)
         pool2.close()
         pool2.join()
-
-    if ANSWER_REDO == "Yes":
-        if len(AUTHENTICATION_ERRORS) != 0:
-            for ip_address in AUTHENTICATION_ERRORS:
-                get_cdp_details(ip_address, A_USERNAME, A_PASSWORD)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",

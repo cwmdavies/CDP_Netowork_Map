@@ -57,9 +57,6 @@ Debugging = my_gui.Debugging_var.get()
 jump_server = my_gui.JumpServer_var.get()
 _USERNAME = my_gui.Username_var.get()
 _PASSWORD = my_gui.password_var.get()
-A_USERNAME = "answer"
-A_PASSWORD = my_gui.answer_password_var.get()
-ANSWER_REDO = my_gui.answer_redo_var.get()
 IPAddr1 = my_gui.IP_Address1_var.get()
 IPAddr2 = my_gui.IP_Address2_var.get()
 FolderPath = my_gui.FolderPath_var.get()
@@ -188,23 +185,9 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
             log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        if ANSWER_REDO == "Yes":
-            if ip not in AUTHENTICATION_ERRORS:
-                AUTHENTICATION_ERRORS.append(ip)
-                with THREADLOCK:
-                    log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
-                              f"Retrying using 'answer' credentials.")
-                jump_session(ip, A_USERNAME, A_PASSWORD)
-            elif ip in AUTHENTICATION_ERRORS:
-                with THREADLOCK:
-                    log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
-                              f"Please check your ip, username and password.")
-                return None, None, False
-        else:
-            AUTHENTICATION_ERRORS.append(ip)
-            with THREADLOCK:
-                log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! "
-                          f"Please check your ip, username and password.")
+        AUTHENTICATION_ERRORS.append(ip)
+        with THREADLOCK:
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ")
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)

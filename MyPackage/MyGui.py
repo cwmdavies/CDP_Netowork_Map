@@ -1,4 +1,4 @@
-from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
+from tkinter import Tk, ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
@@ -136,6 +136,9 @@ class MyGUIClass:
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
 
+
+root = Tk()
+my_gui = MyGUIClass(root)
 
 """
 Example Code

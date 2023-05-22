@@ -1,9 +1,9 @@
 import sys
-import MyPackage.MyGui as MyGui
 import logging
 import os
+from MyPackage import config_params
 
-Debugging = MyGui.my_gui.Debugging_var.get()
+Debugging = config_params.Settings["Debugging"]
 FolderPath = os.getcwd()
 
 # Log file location
@@ -14,7 +14,7 @@ log_format = (
     '[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
 
 # Define basic configuration
-if Debugging == "Off":
+if Debugging == "0":
     logging.basicConfig(
         # Define logging level
         level=logging.INFO,
@@ -27,7 +27,7 @@ if Debugging == "Off":
         ]
     )
     logging.getLogger("paramiko").setLevel(logging.ERROR)
-elif Debugging == "On":
+elif Debugging == "1":
     logging.basicConfig(
         # Define logging level
         level=logging.DEBUG,
@@ -40,5 +40,4 @@ elif Debugging == "On":
         ]
     )
 
-# Define your own logger name
 log = logging.getLogger(__name__)

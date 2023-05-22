@@ -15,7 +15,6 @@ Each IP Address is checked to ensure each IP Address is valid.
 """
 
 import MyPackage.MyGui as MyGui
-import MyPackage.logging_config
 from MyPackage import config_params
 import paramiko
 import textfsm
@@ -30,6 +29,7 @@ import socket
 import os
 import datetime
 import shutil
+import logging.config
 
 EXCEL_TEMPLATE = "1 - CDP Switch Audit _ Template.xlsx"
 LOCAL_IP_ADDRESS = '127.0.0.1'  # ip Address of the machine you are connecting from
@@ -39,7 +39,6 @@ DNS_IP = {}
 CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
-INDEX = 2
 THREADLOCK = multiprocessing.Lock()
 TIMEOUT = config_params.Settings["TIMEOUT"]
 DATE_TIME_NOW = datetime.datetime.now()
@@ -48,13 +47,18 @@ TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
 
 MyGui.root.mainloop()
 
-SiteName = MyGui.my_gui.SiteName_var.get()
 Debugging = MyGui.my_gui.Debugging_var.get()
+SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
 IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
-IPAddr2 = MyGui.my_gui.IP_Address2_var.get()
+
+if MyGui.my_gui.IP_Address2_var.get():
+    IPAddr2 = MyGui.my_gui.IP_Address2_var.get()
+else:
+    IPAddr2 = None
+
 FolderPath = MyGui.my_gui.FolderPath_var.get()
 if MyGui.my_gui.JumpServer_var.get() == "AR31NOC":
     jump_server = "10.251.6.31"
@@ -63,6 +67,10 @@ if MyGui.my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
 if MyGui.my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
+
+log = logging.getLogger(__name__)
+logging.config.fileConfig(fname='MyPackage//logging.conf', disable_existing_loggers=False)
+logging.getLogger("paramiko").setLevel(logging.ERROR)
 
 def ip_check(ip) -> bool:
     """
@@ -77,9 +85,9 @@ def ip_check(ip) -> bool:
         return True
     except ValueError:
         with THREADLOCK:
-            MyPackage.logging_config.log.error(f"ip_check function ValueError: "
-                                               f"IP Address: {ip} is an invalid address. Please check and try again!"
-                                               )
+            log.error(
+                f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!"
+                )
         return False
 
 
@@ -92,14 +100,14 @@ def dns_resolve(domain_name) -> None:
     """
     try:
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
+            log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
         addr1 = socket.gethostbyname(domain_name)
         DNS_IP[domain_name] = addr1
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
+            log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
         with THREADLOCK:
-            MyPackage.logging_config.log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}")
+            log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}")
         DNS_IP[domain_name] = "DNS Resolution Failed"
 
 
@@ -116,14 +124,14 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     """
     if not ip_check(ip):
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"open_session function error: "
                 f"ip Address {ip} is not a valid Address. Please check and restart the script!"
             )
         return None, None, False
     try:
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
+            log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         jump_box.connect(jump_server, username=_USERNAME, password=_PASSWORD)
@@ -137,29 +145,29 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         target.connect(hostname=ip, username=username, password=password,
                        sock=jump_box_channel, timeout=TIMEOUT, auth_timeout=TIMEOUT, banner_timeout=TIMEOUT)
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Jump Session Function: Connection to IP: {ip} established")
+            log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ")
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ")
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
+            log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!")
         return None, None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!"
             )
         return None, None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}"
             )
         return None, None, False
@@ -178,17 +186,17 @@ def direct_session(ip) -> "SSH Session + Connection Status":
         return None, False
     try:
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+            log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=_USERNAME, password=_PASSWORD)
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Open Session Function: Connected to ip Address: {ip}")
+            log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"Open Session Function: "
                 f"Authentication to ip Address: {ip} failed! Please check your ip, username and password."
             )
@@ -196,19 +204,19 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
+            log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!")
         return None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!"
             )
         return None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            MyPackage.logging_config.log.error(
+            log.error(
                 f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}"
             )
         return None, False
@@ -234,7 +242,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     if hostname not in HOSTNAMES:
         HOSTNAMES.append(hostname)
         with THREADLOCK:
-            MyPackage.logging_config.log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
+            log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
@@ -254,7 +262,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
     with THREADLOCK:
-        MyPackage.logging_config.log.info(f"Successfully retrieved CDP Details for IP: {ip}")
+        log.info(f"Successfully retrieved CDP Details for IP: {ip}")
     ssh.close()
     if jump_box:
         jump_box.close()
@@ -276,7 +284,7 @@ def get_hostname(ip) -> "Hostname as a string":
     if not connection:
         return None
     with THREADLOCK:
-        MyPackage.logging_config.log.info(f"Attempting to retrieve hostname for IP: {ip}")
+        log.info(f"Attempting to retrieve hostname for IP: {ip}")
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
@@ -286,10 +294,10 @@ def get_hostname(ip) -> "Hostname as a string":
                 re_table = textfsm.TextFSM(f)
                 result = re_table.ParseText(stdout)
                 hostname = result[0][0]
-                MyPackage.logging_config.log.info(f"Successfully retrieved hostname for IP: {ip}")
+                log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
         with THREADLOCK:
-            MyPackage.logging_config.log.error(Err)
+            log.error(Err)
         hostname = "Not Found"
     ssh.close()
     if jump_box:
@@ -299,14 +307,21 @@ def get_hostname(ip) -> "Hostname as a string":
 
 def main():
     global FolderPath
+    global IPAddr1
+    global IPAddr2
     # Start timer.
     start = time.perf_counter()
 
     # Added IP Addresses to the list if they exist, if not log an error.
-    IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else MyPackage.logging_config.log.error(
+    IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(
         f"{IPAddr1}\nNo valid IP Address was found. Please check and try again")
-    IP_LIST.append(IPAddr2) if ip_check(IPAddr2) else MyPackage.logging_config.log.info(
-        f"{IPAddr2}\nNo valid IP Address was found.")
+    try:
+        if not IPAddr2 is None:
+            IP_LIST.append(IPAddr2) if ip_check(IPAddr2) else log.error(
+                f"{IPAddr2}\nNo valid IP Address was found.")
+    except NameError:
+        log.info("Second IP Address not defined.")
+        IPAddr2 = "Not Specified"
 
     # Start the CDP recursive lookup on the network and save the results.
     thread_count = os.cpu_count()
@@ -370,7 +385,7 @@ def main():
 
     # End timer.
     end = time.perf_counter()
-    MyPackage.logging_config.log.info(f"Script finished in {end - start:0.4f} seconds")
+    log.info(f"Script finished in {end - start:0.4f} seconds")
 
 
 if __name__ == "__main__":

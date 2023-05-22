@@ -67,10 +67,13 @@ if MyGui.my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
 if MyGui.my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
-
+logging.config.fileConfig(fname='MyPackage//logging.conf',
+                          disable_existing_loggers=False,
+                          )
+if Debugging == "Off":
+    logging.getLogger("paramiko").setLevel(logging.ERROR)
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname='MyPackage//logging.conf', disable_existing_loggers=False)
-logging.getLogger("paramiko").setLevel(logging.ERROR)
+
 
 def ip_check(ip) -> bool:
     """

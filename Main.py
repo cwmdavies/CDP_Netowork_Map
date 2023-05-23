@@ -40,7 +40,7 @@ CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
 THREADLOCK = multiprocessing.Lock()
-TIMEOUT = config_params.Settings["TIMEOUT"]
+TIMEOUT = int(config_params.Settings["TIMEOUT"])
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
 TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
@@ -60,14 +60,17 @@ else:
     IPAddr2 = None
 
 FolderPath = MyGui.my_gui.FolderPath_var.get()
-if MyGui.my_gui.JumpServer_var.get() == "AR31NOC":
-    jump_server = "10.251.6.31"
-if MyGui.my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
-    jump_server = "10.251.131.6"
+
+JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
+JUMP_SERVER_DICT = dict(config_params.Jump_Servers)
+if MyGui.my_gui.JumpServer_var.get() == JUMP_SERVER_KEYS[0].upper():
+    jump_server = JUMP_SERVER_DICT[JUMP_SERVER_KEYS[0]]
+if MyGui.my_gui.JumpServer_var.get() == JUMP_SERVER_KEYS[1].upper():
+    jump_server = JUMP_SERVER_DICT[JUMP_SERVER_KEYS[1]]
 if MyGui.my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
-logging.config.fileConfig(fname='MyPackage//logging.conf',
+logging.config.fileConfig(fname='MyPackage//logging_configuration.conf',
                           disable_existing_loggers=False,
                           )
 if Debugging == "Off":
@@ -164,7 +167,8 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
             log.error(
-                f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!"
+                f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!",
+                exc_info=True
             )
         return None, None, False
     except Exception as err:
@@ -220,7 +224,8 @@ def direct_session(ip) -> "SSH Session + Connection Status":
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
             log.error(
-                f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}"
+                f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
+                exc_info=True
             )
         return None, False
 
@@ -300,7 +305,7 @@ def get_hostname(ip) -> "Hostname as a string":
                 log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
         with THREADLOCK:
-            log.error(Err)
+            log.error(Err, exc_info=True)
         hostname = "Not Found"
     ssh.close()
     if jump_box:
@@ -320,8 +325,8 @@ def main():
         f"{IPAddr1}\nNo valid IP Address was found. Please check and try again")
     try:
         if not IPAddr2 is None:
-            IP_LIST.append(IPAddr2) if ip_check(IPAddr2) else log.error(
-                f"{IPAddr2}\nNo valid IP Address was found.")
+            IP_LIST.append(IPAddr2) if ip_check(IPAddr2)\
+                else log.error(f"{IPAddr2}\nThe IP Address: {IPAddr2}, is invalid.")
     except NameError:
         log.info("Second IP Address not defined.")
         IPAddr2 = "Not Specified"

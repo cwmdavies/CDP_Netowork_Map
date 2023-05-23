@@ -2,7 +2,10 @@ from tkinter import Tk, ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
+from MyPackage import config_params
 
+
+JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
 
 class MyGUIClass:
     def __init__(self, master):
@@ -64,7 +67,7 @@ class MyGUIClass:
         self.JumpServer_label = Label(self.Site_details, text="\nJumper Server:", anchor="w")
         self.JumpServer_label.pack(fill='x', expand=True)
         self.JumpServer = ttk.Combobox(self.Site_details,
-                                       values=["MMFTH1V-MGMTS02", "AR31NOC", "None"],
+                                       values=[JUMP_SERVER_KEYS[1].upper(), JUMP_SERVER_KEYS[0].upper(), "None"],
                                        state="readonly", textvariable=self.JumpServer_var,
                                        )
         self.JumpServer.current(0)

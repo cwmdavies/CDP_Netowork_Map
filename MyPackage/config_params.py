@@ -2,9 +2,9 @@ import configparser
 import os
 import logging.config
 
-logging.config.fileConfig(fname='MyPackage//logging.conf',
+logging.config.fileConfig(fname='MyPackage//logging_configuration.conf',
                           disable_existing_loggers=False,
-                          defaults={'logfilename': "debug.log"})
+                          )
 log = logging.getLogger(__name__)
 
 parser = configparser.ConfigParser()

@@ -6,12 +6,13 @@ from MyPackage import config_params
 
 
 JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
+VERSION = config_params.Settings["version"]
 
 class MyGUIClass:
     def __init__(self, master):
         super().__init__()
         self.master = master
-        master.title("CDP Network Auditor: V2.0")
+        master.title(f"CDP Network Auditor: {VERSION}")
         master.resizable(False, True)
         master.protocol('WM_DELETE_WINDOW', self.quit_script)
 

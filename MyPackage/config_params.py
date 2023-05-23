@@ -2,7 +2,7 @@ import configparser
 import os
 import logging.config
 
-logging.config.fileConfig(fname='MyPackage//logging_configuration.conf',
+logging.config.fileConfig(fname='config_files/logging_configuration.conf',
                           disable_existing_loggers=False,
                           )
 log = logging.getLogger(__name__)
@@ -10,8 +10,8 @@ log = logging.getLogger(__name__)
 parser = configparser.ConfigParser()
 
 try:
-    if os.path.isfile("MyPackage//global_config.ini"):
-        parser.read("MyPackage//global_config.ini")
+    if os.path.isfile("config_files/global_config.ini"):
+        parser.read("config_files/global_config.ini")
     else:
         raise FileNotFoundError
 except FileNotFoundError:

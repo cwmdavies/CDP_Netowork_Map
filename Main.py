@@ -2,8 +2,8 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-App Version: 2.0
-Tested on Python 3.11
+Tested on Python 3.10
+
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses
@@ -70,7 +70,7 @@ if MyGui.my_gui.JumpServer_var.get() == JUMP_SERVER_KEYS[1].upper():
 if MyGui.my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
-logging.config.fileConfig(fname='MyPackage//logging_configuration.conf',
+logging.config.fileConfig(fname='config_files/logging_configuration.conf',
                           disable_existing_loggers=False,
                           )
 if Debugging == "Off":

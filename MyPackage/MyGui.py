@@ -1,14 +1,18 @@
-from tkinter import ttk, Label, Button, Entry, StringVar, filedialog
+from tkinter import Tk, ttk, Label, Button, Entry, StringVar, filedialog
 from tkinter.messagebox import showinfo, showerror
 import sys
 import ipaddress
+from MyPackage import config_params
 
+
+JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
+VERSION = config_params.Settings["version"]
 
 class MyGUIClass:
     def __init__(self, master):
         super().__init__()
         self.master = master
-        master.title("CDP Network Auditor: V2.0")
+        master.title(f"CDP Network Auditor: {VERSION}")
         master.resizable(False, True)
         master.protocol('WM_DELETE_WINDOW', self.quit_script)
 
@@ -64,7 +68,7 @@ class MyGUIClass:
         self.JumpServer_label = Label(self.Site_details, text="\nJumper Server:", anchor="w")
         self.JumpServer_label.pack(fill='x', expand=True)
         self.JumpServer = ttk.Combobox(self.Site_details,
-                                       values=["MMFTH1V-MGMTS02", "AR31NOC", "None"],
+                                       values=[JUMP_SERVER_KEYS[0].upper(), JUMP_SERVER_KEYS[1].upper(), "None"],
                                        state="readonly", textvariable=self.JumpServer_var,
                                        )
         self.JumpServer.current(0)
@@ -136,6 +140,9 @@ class MyGUIClass:
         folder_selected = filedialog.askdirectory()
         self.FolderPath_var.set(folder_selected)
 
+
+root = Tk()
+my_gui = MyGUIClass(root)
 
 """
 Example Code

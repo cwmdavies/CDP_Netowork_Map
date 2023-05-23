@@ -2,8 +2,8 @@
 Author Details:
 Name: Chris Davies
 Email: chris.davies@weavermanor.co.uk
-App Version: 2.0
-Tested on Python 3.11
+Tested on Python 3.10
+
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring
 IP Address for each CDP neighbour and saved to a separate list. Another list is used to store the IP Addresses
@@ -15,15 +15,13 @@ Each IP Address is checked to ensure each IP Address is valid.
 """
 
 import MyPackage.MyGui as MyGui
+from MyPackage import config_params
 import paramiko
 import textfsm
 import ipaddress
-import logging
-import sys
 import time
 from multiprocessing.pool import ThreadPool
 import multiprocessing
-from tkinter import Tk
 import ctypes
 import pandas
 import openpyxl
@@ -31,6 +29,7 @@ import socket
 import os
 import datetime
 import shutil
+import logging.config
 
 EXCEL_TEMPLATE = "1 - CDP Switch Audit _ Template.xlsx"
 LOCAL_IP_ADDRESS = '127.0.0.1'  # ip Address of the machine you are connecting from
@@ -40,76 +39,43 @@ DNS_IP = {}
 CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
-INDEX = 2
 THREADLOCK = multiprocessing.Lock()
-TIMEOUT = 15
+TIMEOUT = int(config_params.Settings["TIMEOUT"])
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
 TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
 
-root = Tk()
-my_gui = MyGui.MyGUIClass(root)
-root.mainloop()
+MyGui.root.mainloop()
 
+Debugging = MyGui.my_gui.Debugging_var.get()
+SiteName = MyGui.my_gui.SiteName_var.get()
+jump_server = MyGui.my_gui.JumpServer_var.get()
+_USERNAME = MyGui.my_gui.Username_var.get()
+_PASSWORD = MyGui.my_gui.password_var.get()
+IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
 
-SiteName = my_gui.SiteName_var.get()
-Debugging = my_gui.Debugging_var.get()
-jump_server = my_gui.JumpServer_var.get()
-_USERNAME = my_gui.Username_var.get()
-_PASSWORD = my_gui.password_var.get()
-IPAddr1 = my_gui.IP_Address1_var.get()
-IPAddr2 = my_gui.IP_Address2_var.get()
-FolderPath = my_gui.FolderPath_var.get()
-if my_gui.JumpServer_var.get() == "AR31NOC":
-    jump_server = "10.251.6.31"
-if my_gui.JumpServer_var.get() == "MMFTH1V-MGMTS02":
-    jump_server = "10.251.131.6"
-if my_gui.JumpServer_var.get() == "None":
+if MyGui.my_gui.IP_Address2_var.get():
+    IPAddr2 = MyGui.my_gui.IP_Address2_var.get()
+else:
+    IPAddr2 = None
+
+FolderPath = MyGui.my_gui.FolderPath_var.get()
+
+JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
+JUMP_SERVER_DICT = dict(config_params.Jump_Servers)
+if MyGui.my_gui.JumpServer_var.get() == JUMP_SERVER_KEYS[0].upper():
+    jump_server = JUMP_SERVER_DICT[JUMP_SERVER_KEYS[0]]
+if MyGui.my_gui.JumpServer_var.get() == JUMP_SERVER_KEYS[1].upper():
+    jump_server = JUMP_SERVER_DICT[JUMP_SERVER_KEYS[1]]
+if MyGui.my_gui.JumpServer_var.get() == "None":
     jump_server = "None"
 
-# -----------------------------------------------------------
-# --------------- Logging Configuration Start ---------------
-
-# Log file location
-logfile = f'{FolderPath}\\debug.log'
-
-# Define the log format
-log_format = (
-    '[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
-
-# Define basic configuration
+logging.config.fileConfig(fname='config_files/logging_configuration.conf',
+                          disable_existing_loggers=False,
+                          )
 if Debugging == "Off":
-    logging.basicConfig(
-        # Define logging level
-        level=logging.INFO,
-        # Declare the object we created to format the log messages
-        format=log_format,
-        # Declare handlers
-        handlers=[
-            logging.FileHandler(logfile),
-            logging.StreamHandler(sys.stdout),
-        ]
-    )
     logging.getLogger("paramiko").setLevel(logging.ERROR)
-elif Debugging == "On":
-    logging.basicConfig(
-        # Define logging level
-        level=logging.DEBUG,
-        # Declare the object we created to format the log messages
-        format=log_format,
-        # Declare handlers
-        handlers=[
-            logging.FileHandler(logfile),
-            logging.StreamHandler(sys.stdout),
-        ]
-    )
-
-# Define your own logger name
 log = logging.getLogger(__name__)
-
-
-# --------------- Logging Configuration End ---------------
-# ---------------------------------------------------------
 
 
 def ip_check(ip) -> bool:
@@ -125,8 +91,9 @@ def ip_check(ip) -> bool:
         return True
     except ValueError:
         with THREADLOCK:
-            log.error(f"ip_check function ValueError: "
-                      f"IP Address: {ip} is an invalid address. Please check and try again!")
+            log.error(
+                f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!"
+                )
         return False
 
 
@@ -163,8 +130,10 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     """
     if not ip_check(ip):
         with THREADLOCK:
-            log.error(f"open_session function error: "
-                      f"ip Address {ip} is not a valid Address. Please check and restart the script!", )
+            log.error(
+                f"open_session function error: "
+                f"ip Address {ip} is not a valid Address. Please check and restart the script!"
+            )
         return None, None, False
     try:
         with THREADLOCK:
@@ -197,12 +166,17 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!")
+            log.error(
+                f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!",
+                exc_info=True
+            )
         return None, None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}")
+            log.error(
+                f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}"
+            )
         return None, None, False
 
 
@@ -229,8 +203,10 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(f"Open Session Function: "
-                      f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.")
+            log.error(
+                f"Open Session Function: "
+                f"Authentication to ip Address: {ip} failed! Please check your ip, username and password."
+            )
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
@@ -240,12 +216,17 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!")
+            log.error(
+                f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!"
+            )
         return None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}")
+            log.error(
+                f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
+                exc_info=True
+            )
         return None, False
 
 
@@ -324,7 +305,7 @@ def get_hostname(ip) -> "Hostname as a string":
                 log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
         with THREADLOCK:
-            log.error(Err)
+            log.error(Err, exc_info=True)
         hostname = "Not Found"
     ssh.close()
     if jump_box:
@@ -334,14 +315,21 @@ def get_hostname(ip) -> "Hostname as a string":
 
 def main():
     global FolderPath
+    global IPAddr1
+    global IPAddr2
     # Start timer.
     start = time.perf_counter()
 
     # Added IP Addresses to the list if they exist, if not log an error.
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(
         f"{IPAddr1}\nNo valid IP Address was found. Please check and try again")
-    IP_LIST.append(IPAddr2) if ip_check(IPAddr2) else log.info(
-        f"{IPAddr2}\nNo valid IP Address was found.")
+    try:
+        if not IPAddr2 is None:
+            IP_LIST.append(IPAddr2) if ip_check(IPAddr2)\
+                else log.error(f"{IPAddr2}\nThe IP Address: {IPAddr2}, is invalid.")
+    except NameError:
+        log.info("Second IP Address not defined.")
+        IPAddr2 = "Not Specified"
 
     # Start the CDP recursive lookup on the network and save the results.
     thread_count = os.cpu_count()

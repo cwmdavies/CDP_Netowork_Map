@@ -346,7 +346,7 @@ def main():
             IPAddr2 = "Not Specified"
     except Exception as Err:
         log.error(Err, exc_info=True)
-        IPAddr2 = "Not Specified"
+        IPAddr2 = "Error: Check debug logs."
 
     # Start the CDP recursive lookup on the network and save the results.
     thread_count = os.cpu_count()

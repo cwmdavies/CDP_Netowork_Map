@@ -21,7 +21,7 @@ import textfsm
 import ipaddress
 import time
 from multiprocessing.pool import ThreadPool
-import multiprocessing
+from multiprocessing import Lock
 import ctypes
 import pandas
 import openpyxl
@@ -39,7 +39,7 @@ DNS_IP = {}
 CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
-THREADLOCK = multiprocessing.Lock()
+THREADLOCK = Lock()
 TIMEOUT = int(config_params.Settings["TIMEOUT"])
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
@@ -131,7 +131,7 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     if not ip_check(ip):
         with THREADLOCK:
             log.error(
-                f"open_session function error: "
+                f"Jump_session function error: "
                 f"ip Address {ip} is not a valid Address. Please check and restart the script!"
             )
         return None, None, False
@@ -342,14 +342,9 @@ def main():
             pool.map(get_cdp_details, ip_addresses)
 
             i = limit
-        # Close off and join the pools together.
-        pool.close()
-        pool.join()
 
     with ThreadPool(thread_count) as pool2:
         pool2.map(dns_resolve, HOSTNAMES)
-        pool2.close()
-        pool2.join()
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",

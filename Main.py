@@ -361,7 +361,7 @@ def main():
     dns_array = pandas.DataFrame(DNS_IP.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    excel_template = f"{os.getcwd()}\\1 - CDP Switch Audit _ Template.xlsx"
+    excel_template = f"config_files\\1 - CDP Switch Audit _ Template.xlsx"
     shutil.copy2(src=excel_template, dst=filepath)
 
     wb = openpyxl.load_workbook(filepath)

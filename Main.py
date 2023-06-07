@@ -301,6 +301,17 @@ def get_hostname(ip) -> "Hostname as a string":
     return hostname
 
 
+def run_multi_thread(function, iterable):
+    thread_count = os.cpu_count()
+    with multiprocessing.pool.ThreadPool(thread_count) as pool:
+        i = 0
+        while i < len(iterable):
+            limit = i + min(thread_count, (len(iterable) - i))
+            ip_addresses = iterable[i:limit]
+            pool.map(function, ip_addresses)
+            i = limit
+
+
 def main():
     global FolderPath
     global IPAddr1
@@ -320,17 +331,13 @@ def main():
         IPAddr2 = "Not Specified"
 
     # Start the CDP recursive lookup on the network and save the results.
-    thread_count = os.cpu_count()
-    with multiprocessing.pool.ThreadPool(thread_count) as pool:
-        i = 0
-        while i < len(IP_LIST):
-            limit = i + min(thread_count, (len(IP_LIST) - i))
-            ip_addresses = IP_LIST[i:limit]
-            pool.map(get_cdp_details, ip_addresses)
-            i = limit
+    run_multi_thread(get_cdp_details, IP_LIST)
 
-    with multiprocessing.pool.ThreadPool(thread_count) as pool2:
-        pool2.map(dns_resolve, HOSTNAMES)
+    # Redo all authentication errors
+    run_multi_thread(get_cdp_details, AUTHENTICATION_ERRORS)
+
+    # Resolve DNS A addresses using hostnames
+    run_multi_thread(dns_resolve, HOSTNAMES)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
@@ -356,7 +363,7 @@ def main():
     ws1["B5"] = DATE_NOW
     ws1["B6"] = TIME_NOW
     ws1["B7"] = IPAddr1
-    ws1["B8"] = IPAddr2
+    ws1["B8"] = IPAddr2 if IPAddr2 else "Not Specified"
     wb.save(filepath)
     wb.close()
 

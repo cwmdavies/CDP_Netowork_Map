@@ -53,11 +53,7 @@ jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
 IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
-
-if MyGui.my_gui.IP_Address2_var.get():
-    IPAddr2 = MyGui.my_gui.IP_Address2_var.get()
-else:
-    IPAddr2 = None
+IPAddr2 = MyGui.my_gui.IP_Address2_var.get() if MyGui.my_gui.IP_Address2_var.get() else None
 
 FolderPath = MyGui.my_gui.FolderPath_var.get()
 

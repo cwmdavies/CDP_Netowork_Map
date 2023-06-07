@@ -310,7 +310,7 @@ def main():
     IP_LIST.append(IPAddr1) if ip_check(IPAddr1) else log.error(
         f"{IPAddr1}\nNo valid IP Address was found. Please check and try again")
     try:
-        if not IPAddr2 is None:
+        if IPAddr2 is not None:
             IP_LIST.append(IPAddr2) if ip_check(IPAddr2)\
                 else log.error(f"{IPAddr2}\nThe IP Address: {IPAddr2}, is invalid.")
     except NameError:

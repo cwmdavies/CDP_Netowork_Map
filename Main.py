@@ -13,15 +13,14 @@ more IP Addresses to connect to. The information is then converted to a numpy ar
 The script uses threading to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
 """
-
 import MyPackage.MyGui as MyGui
 from MyPackage import config_params
 import paramiko
 import textfsm
 import ipaddress
 import time
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Lock
+import multiprocessing
+import multiprocessing.pool
 import ctypes
 import pandas
 import openpyxl
@@ -39,7 +38,7 @@ DNS_IP = {}
 CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
-THREADLOCK = Lock()
+THREADLOCK = multiprocessing.Lock()
 TIMEOUT = int(config_params.Settings["TIMEOUT"])
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")
@@ -322,7 +321,7 @@ def main():
 
     # Start the CDP recursive lookup on the network and save the results.
     thread_count = os.cpu_count()
-    with ThreadPool(thread_count) as pool:
+    with multiprocessing.pool.ThreadPool(thread_count) as pool:
         i = 0
         while i < len(IP_LIST):
             limit = i + min(thread_count, (len(IP_LIST) - i))
@@ -330,7 +329,7 @@ def main():
             pool.map(get_cdp_details, ip_addresses)
             i = limit
 
-    with ThreadPool(thread_count) as pool2:
+    with multiprocessing.pool.ThreadPool(thread_count) as pool2:
         pool2.map(dns_resolve, HOSTNAMES)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",

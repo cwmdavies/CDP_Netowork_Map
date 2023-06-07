@@ -86,8 +86,10 @@ def ip_check(ip) -> bool:
     except ValueError:
         log.error(
             f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!",
-            exc_info=True
-            )
+            exc_info=True)
+        return False
+    except Exception as Err:
+        log.error(f"An error occurred: {Err}",)
         return False
 
 
@@ -105,9 +107,11 @@ def dns_resolve(domain_name) -> None:
         log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
         log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}",
-                  exc_info=True
-                  )
+                  exc_info=True)
         DNS_IP[domain_name] = "DNS Resolution Failed"
+    except Exception as Err:
+        log.error(f"An unknown error occurred for hostname: {domain_name}, {Err}",
+                  exc_info=True)
 
 
 def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + Jump Session + Connection Status":
@@ -125,8 +129,7 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         log.error(
             f"Jump_session function error: "
             f"ip Address {ip} is not a valid Address. Please check and restart the script!",
-            exc_info=True
-                  )
+            exc_info=True)
         return None, None, False
     try:
         log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
@@ -324,9 +327,7 @@ def main():
         while i < len(IP_LIST):
             limit = i + min(thread_count, (len(IP_LIST) - i))
             ip_addresses = IP_LIST[i:limit]
-
             pool.map(get_cdp_details, ip_addresses)
-
             i = limit
 
     with ThreadPool(thread_count) as pool2:
@@ -369,8 +370,8 @@ def main():
     writer.close()
 
     ctypes.windll.user32.MessageBoxW(0, f"Script Complete\n\n"
-                                        f"File saved in:\n"
-                                        f"{filepath}", "Info", 0x40000)
+                                        f"File Save Location: {filepath}",
+                                     "Info", 0x40000)
 
     # End timer.
     end = time.perf_counter()

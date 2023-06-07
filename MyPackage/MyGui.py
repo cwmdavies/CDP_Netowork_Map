@@ -8,6 +8,7 @@ from MyPackage import config_params
 JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
 VERSION = config_params.Settings["version"]
 
+
 class MyGUIClass:
     def __init__(self, master):
         super().__init__()
@@ -74,15 +75,6 @@ class MyGUIClass:
         self.JumpServer.current(0)
         self.JumpServer.pack(fill='x', expand=True)
 
-        self.Debugging_var = StringVar()
-        self.Debugging_var.set("Off")
-        self.Debugging_label = ttk.Label(self.Site_details, text="\nDebugging:", anchor="w")
-        self.Debugging_label.pack(fill='x', expand=True)
-        self.Debugging = ttk.Combobox(self.Site_details, values=["Off", "On"], state="readonly",
-                                      textvariable=self.Debugging_var)
-        self.Debugging.current(0)
-        self.Debugging.pack(fill='x', expand=True, pady=(0, 20))
-
         self.submit_button = Button(self.Site_details, text="Submit", command=self.validation, width=25)
         self.submit_button.pack(side="left", fill="x",)
 
@@ -125,7 +117,6 @@ class MyGUIClass:
                 self.FolderPath_entry.config(state="disabled")
                 self.browse_button.config(state="disabled")
                 self.JumpServer.config(state="disabled")
-                self.Debugging.config(state="disabled")
                 self.submit_button.config(state="disabled")
                 showinfo("Information", "Your script is running in the background\n"
                                         "and may take a few minutes\n"

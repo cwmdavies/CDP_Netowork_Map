@@ -84,11 +84,10 @@ def ip_check(ip) -> bool:
         ipaddress.ip_address(ip)
         return True
     except ValueError:
-        with THREADLOCK:
-            log.error(
-                f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!",
-                exc_info=True
-                )
+        log.error(
+            f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!",
+            exc_info=True
+            )
         return False
 
 
@@ -100,17 +99,14 @@ def dns_resolve(domain_name) -> None:
     :return: None. Saves IP Address and domain name to a dictionary. Example: {"google.com": "142.250.200.14"}
     """
     try:
-        with THREADLOCK:
-            log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
+        log.info(f"Attempting to retrieve DNS 'A' record for hostname: {domain_name}")
         addr1 = socket.gethostbyname(domain_name)
         DNS_IP[domain_name] = addr1
-        with THREADLOCK:
-            log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
+        log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
-        with THREADLOCK:
-            log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}",
-                      exc_info=True
-                      )
+        log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}",
+                  exc_info=True
+                  )
         DNS_IP[domain_name] = "DNS Resolution Failed"
 
 
@@ -126,16 +122,14 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
     if not ip_check(ip):
-        with THREADLOCK:
-            log.error(
-                f"Jump_session function error: "
-                f"ip Address {ip} is not a valid Address. Please check and restart the script!",
-                exc_info=True
-                      )
+        log.error(
+            f"Jump_session function error: "
+            f"ip Address {ip} is not a valid Address. Please check and restart the script!",
+            exc_info=True
+                  )
         return None, None, False
     try:
-        with THREADLOCK:
-            log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
+        log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         jump_box.connect(jump_server, username=_USERNAME, password=_PASSWORD)
@@ -148,38 +142,33 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         target.connect(hostname=ip, username=username, password=password,
                        sock=jump_box_channel, timeout=TIMEOUT, auth_timeout=TIMEOUT, banner_timeout=TIMEOUT)
-        with THREADLOCK:
-            log.info(f"Jump Session Function: Connection to IP: {ip} established")
+        log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
-                      exc_info=True
-                      )
-            return None, None, False
+        log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
+                  exc_info=True
+                  )
+        return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
-                      exc_info=True
-                      )
+        log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
+                  exc_info=True
+                  )
         return None, None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(
-                f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!",
-                exc_info=True
-                )
+        log.error(
+            f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!",
+            exc_info=True
+            )
         return None, None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(
-                f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}",
-                exc_info=True
-                )
+        log.error(
+            f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}",
+            exc_info=True
+            )
         return None, None, False
 
 
@@ -195,45 +184,39 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     if not ip_check(ip):
         return None, False
     try:
-        with THREADLOCK:
-            log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+        log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=_USERNAME, password=_PASSWORD)
-        with THREADLOCK:
-            log.info(f"Open Session Function: Connected to ip Address: {ip}")
+        log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(
-                f"Open Session Function: "
-                f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.",
-                exc_info=True
-                )
+        log.error(
+            f"Open Session Function: "
+            f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.",
+            exc_info=True
+            )
         return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
-                      exc_info=True
-                      )
+        log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
+                  exc_info=True
+                  )
         return None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(
-                f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!",
-                exc_info=True
-                )
+        log.error(
+            f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!",
+            exc_info=True
+            )
         return None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
-        with THREADLOCK:
-            log.error(
-                f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
-                exc_info=True
-            )
+        log.error(
+            f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
+            exc_info=True
+        )
         return None, False
 
 
@@ -256,8 +239,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
     hostname = get_hostname(ip)
     if hostname not in HOSTNAMES:
         HOSTNAMES.append(hostname)
-        with THREADLOCK:
-            log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
+        log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
         _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
         stdout = stdout.read()
         stdout = stdout.decode("utf-8")
@@ -276,8 +258,7 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
             if entry["MANAGEMENT_IP"] not in IP_LIST:
                 if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
                     IP_LIST.append(entry["MANAGEMENT_IP"])
-    with THREADLOCK:
-        log.info(f"Successfully retrieved CDP Details for IP: {ip}")
+    log.info(f"Successfully retrieved CDP Details for IP: {ip}")
     ssh.close()
     if jump_box:
         jump_box.close()
@@ -298,8 +279,7 @@ def get_hostname(ip) -> "Hostname as a string":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
-    with THREADLOCK:
-        log.info(f"Attempting to retrieve hostname for IP: {ip}")
+    log.info(f"Attempting to retrieve hostname for IP: {ip}")
     _, stdout, _ = ssh.exec_command("show run | inc hostname")
     stdout = stdout.read()
     stdout = stdout.decode("utf-8")
@@ -311,8 +291,7 @@ def get_hostname(ip) -> "Hostname as a string":
                 hostname = result[0][0]
                 log.info(f"Successfully retrieved hostname for IP: {ip}")
     except Exception as Err:
-        with THREADLOCK:
-            log.error(Err, exc_info=True)
+        log.error(Err, exc_info=True)
         hostname = "Not Found"
     ssh.close()
     if jump_box:

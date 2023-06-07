@@ -47,7 +47,6 @@ TIME_NOW = DATE_TIME_NOW.strftime("%H:%M")
 
 MyGui.root.mainloop()
 
-Debugging = MyGui.my_gui.Debugging_var.get()
 SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
@@ -69,8 +68,7 @@ if MyGui.my_gui.JumpServer_var.get() == "None":
 logging.config.fileConfig(fname='config_files/logging_configuration.conf',
                           disable_existing_loggers=False,
                           )
-if Debugging == "Off":
-    logging.getLogger("paramiko").setLevel(logging.ERROR)
+logging.getLogger("paramiko").setLevel(logging.ERROR)
 log = logging.getLogger(__name__)
 
 

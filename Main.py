@@ -93,7 +93,7 @@ def ip_check(ip) -> bool:
         with THREADLOCK:
             log.error(
                 f"ip_check function ValueError: IP Address: {ip} is an invalid address. Please check and try again!",
-            exc_info = True
+                exc_info=True
                 )
         return False
 
@@ -115,7 +115,7 @@ def dns_resolve(domain_name) -> None:
     except socket.gaierror:
         with THREADLOCK:
             log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}",
-                      exc_info = True
+                      exc_info=True
                       )
         DNS_IP[domain_name] = "DNS Resolution Failed"
 
@@ -134,10 +134,10 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     if not ip_check(ip):
         with THREADLOCK:
             log.error(
-                f"open_session function error: "
+                f"Jump_session function error: "
                 f"ip Address {ip} is not a valid Address. Please check and restart the script!",
                 exc_info=True
-            )
+                      )
         return None, None, False
     try:
         with THREADLOCK:
@@ -160,17 +160,16 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
     except paramiko.ssh_exception.AuthenticationException:
         AUTHENTICATION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(
-                f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
-                      exc_info=True)
+            log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
+                      exc_info=True
+                      )
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(
-                f"Jump Session Function Error: Unable to connect to IP: {ip}!",
-                exc_info=True
-            )
+            log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
+                      exc_info=True
+                      )
         return None, None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
@@ -178,14 +177,15 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
             log.error(
                 f"Jump Session Function Error: Connection or Timeout error occurred for IP: {ip}!",
                 exc_info=True
-            )
+                )
         return None, None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
             log.error(
-                f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}"
-            )
+                f"Jump Session Function Error: An unknown error occurred for IP: {ip}!\n{err}",
+                exc_info=True
+                )
         return None, None, False
 
 
@@ -221,17 +221,16 @@ def direct_session(ip) -> "SSH Session + Connection Status":
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
-            log.error(
-                f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
-                exc_info = True
-                )
+            log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
+                      exc_info=True
+                      )
         return None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
         with THREADLOCK:
             log.error(
                 f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!",
-                exc_info = True
+                exc_info=True
                 )
         return None, False
     except Exception as err:
@@ -341,12 +340,9 @@ def main():
         if not IPAddr2 is None:
             IP_LIST.append(IPAddr2) if ip_check(IPAddr2)\
                 else log.error(f"{IPAddr2}\nThe IP Address: {IPAddr2}, is invalid.")
-        elif IPAddr2 is None:
-            log.info("Second IP Address not specified")
-            IPAddr2 = "Not Specified"
-    except Exception as Err:
-        log.error(Err, exc_info=True)
-        IPAddr2 = "Error: Check debug logs."
+    except NameError:
+        log.info("Second IP Address not defined.")
+        IPAddr2 = "Not Specified"
 
     # Start the CDP recursive lookup on the network and save the results.
     thread_count = os.cpu_count()
@@ -359,14 +355,9 @@ def main():
             pool.map(get_cdp_details, ip_addresses)
 
             i = limit
-        # Close off and join the pools together.
-        pool.close()
-        pool.join()
 
     with ThreadPool(thread_count) as pool2:
         pool2.map(dns_resolve, HOSTNAMES)
-        pool2.close()
-        pool2.join()
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
@@ -383,7 +374,7 @@ def main():
     dns_array = pandas.DataFrame(DNS_IP.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    excel_template = f"{os.getcwd()}\\config_files\\1 - CDP Switch Audit _ Template.xlsx"
+    excel_template = f"config_files\\1 - CDP Switch Audit _ Template.xlsx"
     shutil.copy2(src=excel_template, dst=filepath)
 
     wb = openpyxl.load_workbook(filepath)

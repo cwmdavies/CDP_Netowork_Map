@@ -10,7 +10,7 @@ IP Address for each CDP neighbour and saved to a separate list. Another list is 
 of those that have been processed so no switch is connected too more than once. A connection is made to each IP Address
 in the list , using threading, to retrieve the same information. This recursion goes on until there are no
 more IP Addresses to connect to. The information is then converted to a numpy array and saved to an Excel spreadsheet.
-Threading is used to connect to multiple switches at a time.
+The script uses threading to connect to multiple switches at a time.
 Each IP Address is checked to ensure each IP Address is valid.
 """
 
@@ -21,7 +21,7 @@ import textfsm
 import ipaddress
 import time
 from multiprocessing.pool import ThreadPool
-import multiprocessing
+from multiprocessing import Lock
 import ctypes
 import pandas
 import openpyxl
@@ -39,7 +39,7 @@ DNS_IP = {}
 CONNECTION_ERRORS = []
 AUTHENTICATION_ERRORS = []
 COLLECTION_OF_RESULTS = []
-THREADLOCK = multiprocessing.Lock()
+THREADLOCK = Lock()
 TIMEOUT = int(config_params.Settings["TIMEOUT"])
 DATE_TIME_NOW = datetime.datetime.now()
 DATE_NOW = DATE_TIME_NOW.strftime("%d %B %Y")

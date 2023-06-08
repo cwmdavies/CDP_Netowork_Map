@@ -333,8 +333,15 @@ def main():
     # Start the CDP recursive lookup on the network and save the results.
     run_multi_thread(get_cdp_details, IP_LIST)
 
-    # Redo all authentication errors
-    run_multi_thread(get_cdp_details, AUTHENTICATION_ERRORS)
+    # # Redo all authentication errors
+    # if AUTHENTICATION_ERRORS != 0:
+    #     log.info("Attempting to retry connection to all failed attempts using alternative credentials")
+    #     _USERNAME = "answer"
+    #     _PASSWORD = _ANSWER_PASSWORD
+    #     for i in AUTHENTICATION_ERRORS:
+    #         if i in IP_LIST:
+    #             IP_LIST.remove(i)
+    #     run_multi_thread(get_cdp_details, AUTHENTICATION_ERRORS)
 
     # Resolve DNS A addresses using hostnames
     run_multi_thread(dns_resolve, HOSTNAMES)

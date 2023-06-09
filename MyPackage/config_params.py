@@ -19,3 +19,4 @@ except FileNotFoundError:
 
 Settings = parser["Settings"]
 Jump_Servers = parser["Jump_Server"]
+Alternative_Credentials = parser["Alternative_Credentials"]

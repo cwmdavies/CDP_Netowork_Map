@@ -7,6 +7,7 @@ from MyPackage import config_params
 
 JUMP_SERVER_KEYS = list(config_params.Jump_Servers.keys())
 VERSION = config_params.Settings["version"]
+ALT_USERNAME = config_params.Alternative_Credentials["username"]
 
 
 class MyGUIClass:
@@ -41,6 +42,12 @@ class MyGUIClass:
         self.password_label.pack(fill='x', expand=True)
         self.password_entry = Entry(self.Site_details, textvariable=self.password_var, show="*")
         self.password_entry.pack(fill='x', expand=True)
+
+        self.answer_password_var = StringVar()
+        self.answer_password_label = Label(self.Site_details, text=f"\n{ALT_USERNAME} Password: (Required)", anchor="w")
+        self.answer_password_label.pack(fill='x', expand=True)
+        self.answer_password_entry = Entry(self.Site_details, textvariable=self.answer_password_var, show="*")
+        self.answer_password_entry.pack(fill='x', expand=True)
 
         self.IP_Address1_var = StringVar()
         self.IP_Address1_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
@@ -98,7 +105,9 @@ class MyGUIClass:
             elif not self.password_var.get():
                 showerror(f"Error", "Password field is empty\n"
                                     "Please check and try again!")
-
+            elif not self.answer_password_var.get():
+                showerror(f"Error", "Password field is empty\n"
+                                    "Please check and try again!")
             elif not ipaddress.ip_address(self.IP_Address1_var.get()):
                 showerror(f"Error", "Core Switch 1 field is empty or IP is invalid\n"
                                     "Please check and try again!")
@@ -112,6 +121,7 @@ class MyGUIClass:
                 self.Site_Name_entry.config(state="disabled")
                 self.Username_entry.config(state="disabled")
                 self.password_entry.config(state="disabled")
+                self.answer_password_entry.config(state="disabled")
                 self.IP_Address1_entry.config(state="disabled")
                 self.IP_Address2_entry.config(state="disabled")
                 self.FolderPath_entry.config(state="disabled")

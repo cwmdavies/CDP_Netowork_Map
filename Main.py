@@ -50,10 +50,11 @@ SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
-_ANSWER_USER = config_params.Alternative_Credentials["username"]
-_ANSWER_PASSWORD = MyGui.my_gui.answer_password_var.get()
+_ALT_USER = config_params.Alternative_Credentials["username"]
+_ALT_PASSWORD = MyGui.my_gui.alt_password_var.get()
 IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
 IPAddr2 = MyGui.my_gui.IP_Address2_var.get() if MyGui.my_gui.IP_Address2_var.get() else None
+retry = MyGui.my_gui.Retry_Auth_var.get()
 
 FolderPath = MyGui.my_gui.FolderPath_var.get()
 
@@ -150,11 +151,12 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ", exc_info=True)
-        if AUTHENTICATION_ERRORS.count(ip) < 3:
-            log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-            AUTHENTICATION_ERRORS.append(ip)
-            ssh, jump_box, connection = jump_session(ip, username=_ANSWER_USER, password=_ANSWER_PASSWORD)
-            return ssh, jump_box, connection
+        if retry == "Yes":
+            if AUTHENTICATION_ERRORS.count(ip) < 3:
+                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
+                AUTHENTICATION_ERRORS.append(ip)
+                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
+                return ssh, jump_box, connection
         else:
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -200,12 +202,12 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        log.error(f"Direct Session Function Error: Authentication to IP: {ip} failed! ", exc_info=True)
-        if AUTHENTICATION_ERRORS.count(ip) < 3:
-            log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-            AUTHENTICATION_ERRORS.append(ip)
-            ssh, jump_box, connection = jump_session(ip, username=_ANSWER_USER, password=_ANSWER_PASSWORD)
-            return ssh, jump_box, connection
+        if retry == "Yes":
+            if AUTHENTICATION_ERRORS.count(ip) < 3:
+                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
+                AUTHENTICATION_ERRORS.append(ip)
+                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
+                return ssh, jump_box, connection
         else:
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -326,7 +328,7 @@ def main():
     global IPAddr2
     global _USERNAME
     global _PASSWORD
-    global _ANSWER_PASSWORD
+    global _ALT_PASSWORD
 
     # Start timer.
     start = time.perf_counter()

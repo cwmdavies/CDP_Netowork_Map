@@ -50,6 +50,8 @@ SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
+_ANSWER_USER = "answer"
+_ANSWER_PASSWORD = MyGui.my_gui.answer_password_var.get()
 IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
 IPAddr2 = MyGui.my_gui.IP_Address2_var.get() if MyGui.my_gui.IP_Address2_var.get() else None
 
@@ -147,11 +149,16 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        AUTHENTICATION_ERRORS.append(ip)
         log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
                   exc_info=True
                   )
-        return None, None, False
+        if AUTHENTICATION_ERRORS.count(ip) < 3:
+            log.info(f"Retrying connection to '{ip}' using alternative credentials.")
+            AUTHENTICATION_ERRORS.append(ip)
+            ssh, jump_box, connection = jump_session(ip, username=_ANSWER_USER, password=_ANSWER_PASSWORD)
+            return ssh, jump_box, connection
+        else:
+            return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
@@ -174,12 +181,14 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         return None, None, False
 
 
-def direct_session(ip) -> "SSH Session + Connection Status":
+def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + Connection Status":
     """
     Takes in an IP Address as a string.
     Connects to the IP address directly using SSH.
     Returns the SSH session and
     a boolean value that represents the state of the connection.
+    :param username:
+    :param password:
     :param ip: The IP Address you wish to connect to.
     :return: SSH Session + Jump Session + Connection Status(Boolean).
     """
@@ -189,7 +198,7 @@ def direct_session(ip) -> "SSH Session + Connection Status":
         log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username=_USERNAME, password=_PASSWORD)
+        ssh.connect(hostname=ip, port=22, username=username, password=password)
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
@@ -316,6 +325,10 @@ def main():
     global FolderPath
     global IPAddr1
     global IPAddr2
+    global _USERNAME
+    global _PASSWORD
+    global _ANSWER_PASSWORD
+
     # Start timer.
     start = time.perf_counter()
 
@@ -332,9 +345,6 @@ def main():
 
     # Start the CDP recursive lookup on the network and save the results.
     run_multi_thread(get_cdp_details, IP_LIST)
-
-    # Redo all authentication errors
-    run_multi_thread(get_cdp_details, AUTHENTICATION_ERRORS)
 
     # Resolve DNS A addresses using hostnames
     run_multi_thread(dns_resolve, HOSTNAMES)

@@ -157,7 +157,11 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
                 AUTHENTICATION_ERRORS.append(ip)
                 ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
                 return ssh, jump_box, connection
+            else:
+                AUTHENTICATION_ERRORS.append(ip)
+                return None, None, False
         else:
+            AUTHENTICATION_ERRORS.append(ip)
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
@@ -208,7 +212,11 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
                 AUTHENTICATION_ERRORS.append(ip)
                 ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
                 return ssh, jump_box, connection
+            else:
+                AUTHENTICATION_ERRORS.append(ip)
+                return None, None, False
         else:
+            AUTHENTICATION_ERRORS.append(ip)
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
@@ -360,8 +368,8 @@ def main():
                                                                    "SOFTWARE_VERSION",
                                                                    "CAPABILITIES"
                                                                    ])
-    conn_array = pandas.DataFrame(CONNECTION_ERRORS, columns=["Connection Errors"])
-    auth_array = pandas.DataFrame(AUTHENTICATION_ERRORS, columns=["Authentication Errors"])
+    conn_array = pandas.DataFrame(set(CONNECTION_ERRORS), columns=["Connection Errors"])
+    auth_array = pandas.DataFrame(set(AUTHENTICATION_ERRORS), columns=["Authentication Errors"])
     dns_array = pandas.DataFrame(DNS_IP.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"

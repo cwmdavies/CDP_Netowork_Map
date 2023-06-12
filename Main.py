@@ -30,7 +30,7 @@ import datetime
 import shutil
 import logging.config
 
-EXCEL_TEMPLATE = "1 - CDP Switch Audit _ Template.xlsx"
+EXCEL_TEMPLATE = "1 - CDP Network Audit _ Template.xlsx"
 LOCAL_IP_ADDRESS = '127.0.0.1'  # ip Address of the machine you are connecting from
 IP_LIST = []
 HOSTNAMES = []
@@ -50,10 +50,11 @@ SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
-_ANSWER_USER = "answer"
-_ANSWER_PASSWORD = MyGui.my_gui.answer_password_var.get()
+_ALT_USER = config_params.Alternative_Credentials["username"]
+_ALT_PASSWORD = MyGui.my_gui.alt_password_var.get()
 IPAddr1 = MyGui.my_gui.IP_Address1_var.get()
 IPAddr2 = MyGui.my_gui.IP_Address2_var.get() if MyGui.my_gui.IP_Address2_var.get() else None
+retry = MyGui.my_gui.Retry_Auth_var.get()
 
 FolderPath = MyGui.my_gui.FolderPath_var.get()
 
@@ -149,14 +150,13 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ",
-                  exc_info=True
-                  )
-        if AUTHENTICATION_ERRORS.count(ip) < 3:
-            log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-            AUTHENTICATION_ERRORS.append(ip)
-            ssh, jump_box, connection = jump_session(ip, username=_ANSWER_USER, password=_ANSWER_PASSWORD)
-            return ssh, jump_box, connection
+        log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ", exc_info=True)
+        if retry == "Yes":
+            if AUTHENTICATION_ERRORS.count(ip) < 3:
+                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
+                AUTHENTICATION_ERRORS.append(ip)
+                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
+                return ssh, jump_box, connection
         else:
             return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
@@ -202,13 +202,14 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        AUTHENTICATION_ERRORS.append(ip)
-        log.error(
-            f"Open Session Function: "
-            f"Authentication to ip Address: {ip} failed! Please check your ip, username and password.",
-            exc_info=True
-            )
-        return None, False
+        if retry == "Yes":
+            if AUTHENTICATION_ERRORS.count(ip) < 3:
+                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
+                AUTHENTICATION_ERRORS.append(ip)
+                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
+                return ssh, jump_box, connection
+        else:
+            return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
@@ -327,7 +328,7 @@ def main():
     global IPAddr2
     global _USERNAME
     global _PASSWORD
-    global _ANSWER_PASSWORD
+    global _ALT_PASSWORD
 
     # Start timer.
     start = time.perf_counter()
@@ -364,7 +365,7 @@ def main():
     dns_array = pandas.DataFrame(DNS_IP.items(), columns=["Hostname", "IP Address"])
 
     filepath = f"{FolderPath}\\{SiteName}_CDP Switch Audit.xlsx"
-    excel_template = f"config_files\\1 - CDP Switch Audit _ Template.xlsx"
+    excel_template = f"config_files\\1 - CDP Network Audit _ Template.xlsx"
     shutil.copy2(src=excel_template, dst=filepath)
 
     wb = openpyxl.load_workbook(filepath)

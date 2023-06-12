@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CDP_Network_Map.iml" filepath="$PROJECT_DIR$/.idea/CDP_Network_Map.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/CDP_Network_Audit.iml" filepath="$PROJECT_DIR$/.idea/CDP_Network_Audit.iml" />
     </modules>
   </component>
 </project>

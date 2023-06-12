@@ -1,4 +1,4 @@
-# CDP Network Map
+# CDP Network Audit
 
 This script takes in up to two IP Addresses, preferably the core switches, runs the "Show CDP Neighbors Detail"
 command and saves the information to a list of dictionaries. Each dictionary is then parsed for the neighbouring

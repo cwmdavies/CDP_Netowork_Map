@@ -345,11 +345,11 @@ def main():
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
                                                                    "LOCAL_PORT",
+                                                                   "LOCAL SERIAL",
+                                                                   "LOCAL UPTIME",
                                                                    "DESTINATION_HOST",
                                                                    "REMOTE_PORT",
                                                                    "MANAGEMENT_IP",
-                                                                   "SERIAL",
-                                                                   "UPTIME",
                                                                    "PLATFORM",
                                                                    "SOFTWARE_VERSION",
                                                                    "CAPABILITIES"

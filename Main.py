@@ -26,6 +26,7 @@ import pandas
 import openpyxl
 import socket
 import os
+from os.path import exists
 import datetime
 import shutil
 import logging.config
@@ -240,7 +241,7 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         return None, False
 
 
-def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
+def get_facts(ip) -> "None, appends dictionaries to a global list":
     """
     Takes in an IP Address as a string.
     Connects to the host's IP Address and runs the 'show cdp neighbors detail'
@@ -256,21 +257,18 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
-    hostname = get_hostname(ip)
+    get_version_output = send_command(ip, "show version")
+    get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
+    hostname = get_version_output[0].get("HOSTNAME")
+    serial_numbers = get_version_output[0].get("SERIAL")
+    uptime = get_version_output[0].get("UPTIME")
     if hostname not in HOSTNAMES:
         HOSTNAMES.append(hostname)
-        log.info(f"Attempting to retrieve CDP Details for IP: {ip}")
-        _, stdout, _ = ssh.exec_command("show cdp neighbors detail")
-        stdout = stdout.read()
-        stdout = stdout.decode("utf-8")
-        with THREADLOCK:
-            with open("textfsm/cisco_ios_show_cdp_neighbors_detail.textfsm") as f:
-                re_table = textfsm.TextFSM(f)
-                result = re_table.ParseText(stdout)
-        result = [dict(zip(re_table.header, entry)) for entry in result]
-        for entry in result:
-            entry['LOCAL_HOST'] = hostname.upper()
-            entry['LOCAL_IP'] = ip
+        for entry in get_cdp_nei_output:
+            entry["LOCAL_HOST"] = hostname
+            entry["LOCAL_IP"] = ip
+            entry["SERIAL"] = serial_numbers
+            entry["UPTIME"] = uptime
             text = entry['DESTINATION_HOST']
             head, sep, tail = text.partition('.')
             entry['DESTINATION_HOST'] = head.upper()
@@ -284,39 +282,25 @@ def get_cdp_details(ip) -> "None, appends dictionaries to a global list":
         jump_box.close()
 
 
-def get_hostname(ip) -> "Hostname as a string":
-    """
-    Connects to the host's IP Address and runs the 'show run | inc hostname'
-    command and parses the output using TextFSM and saves it as a string.
-    Returns the hostname as a string.
-    :param ip: The IP Address you wish to connect to.
-    :return: Hostname(str).
-    """
-    jump_box = None
-    if jump_server == "None":
-        ssh, connection = direct_session(ip)
-    else:
+def send_command(ip, command):
+    if exists(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")):
         ssh, jump_box, connection = jump_session(ip)
-    if not connection:
-        return None
-    log.info(f"Attempting to retrieve hostname for IP: {ip}")
-    _, stdout, _ = ssh.exec_command("show run | inc hostname")
-    stdout = stdout.read()
-    stdout = stdout.decode("utf-8")
-    try:
-        with THREADLOCK:
-            with open("textfsm/hostname.textfsm") as f:
-                re_table = textfsm.TextFSM(f)
-                result = re_table.ParseText(stdout)
-                hostname = result[0][0]
-                log.info(f"Successfully retrieved hostname for IP: {ip}")
-    except Exception as Err:
-        log.error(Err, exc_info=True)
-        hostname = "Not Found"
-    ssh.close()
-    if jump_box:
+        if not connection:
+            return None, None, False
+        _, stdout, _ = ssh.exec_command(command)
+        stdout = stdout.read()
+        stdout = stdout.decode("utf-8")
+        with open(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")) as f:
+            re_table = textfsm.TextFSM(f)
+            result = re_table.ParseText(stdout)
+        results = [dict(zip(re_table.header, entry)) for entry in result]
+        ssh.close()
         jump_box.close()
-    return hostname
+        return results
+    else:
+        log.error(f"The command: '{command}', cannot be found. "
+                  "Check the command is correct and make sure the TextFSM file exists for that command.")
+        return None
 
 
 def run_multi_thread(function, iterable):
@@ -353,7 +337,7 @@ def main():
         IPAddr2 = "Not Specified"
 
     # Start the CDP recursive lookup on the network and save the results.
-    run_multi_thread(get_cdp_details, IP_LIST)
+    run_multi_thread(get_facts, IP_LIST)
 
     # Resolve DNS A addresses using hostnames
     run_multi_thread(dns_resolve, HOSTNAMES)
@@ -361,6 +345,8 @@ def main():
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
                                                                    "LOCAL_PORT",
+                                                                   "LOCAL SERIAL",
+                                                                   "LOCAL UPTIME",
                                                                    "DESTINATION_HOST",
                                                                    "REMOTE_PORT",
                                                                    "MANAGEMENT_IP",

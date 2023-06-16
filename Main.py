@@ -257,50 +257,68 @@ def get_facts(ip) -> "None, appends dictionaries to a global list":
         ssh, jump_box, connection = jump_session(ip)
     if not connection:
         return None
-    get_version_output = send_command(ip, "show version")
-    get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
-    hostname = get_version_output[0].get("HOSTNAME")
-    serial_numbers = get_version_output[0].get("SERIAL")
-    uptime = get_version_output[0].get("UPTIME")
-    if hostname not in HOSTNAMES:
-        HOSTNAMES.append(hostname)
-        for entry in get_cdp_nei_output:
-            entry["LOCAL_HOST"] = hostname
-            entry["LOCAL_IP"] = ip
-            entry["SERIAL"] = serial_numbers
-            entry["UPTIME"] = uptime
-            text = entry['DESTINATION_HOST']
-            head, sep, tail = text.partition('.')
-            entry['DESTINATION_HOST'] = head.upper()
-            COLLECTION_OF_RESULTS.append(entry)
-            if entry["MANAGEMENT_IP"] not in IP_LIST:
-                if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
-                    IP_LIST.append(entry["MANAGEMENT_IP"])
-    log.info(f"Successfully retrieved CDP Details for IP: {ip}")
-    ssh.close()
-    if jump_box:
-        jump_box.close()
+    try:
+        get_version_output = send_command(ip, "show version")
+        get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
+        hostname = get_version_output[0].get("HOSTNAME")
+        serial_numbers = get_version_output[0].get("SERIAL")
+        uptime = get_version_output[0].get("UPTIME")
+        if hostname not in HOSTNAMES:
+            HOSTNAMES.append(hostname)
+            for entry in get_cdp_nei_output:
+                entry["LOCAL_HOST"] = hostname
+                entry["LOCAL_IP"] = ip
+                entry["LOCAL_SERIAL"] = serial_numbers
+                entry["LOCAL_UPTIME"] = uptime
+                text = entry['DESTINATION_HOST']
+                head, sep, tail = text.partition('.')
+                entry['DESTINATION_HOST'] = head.upper()
+                COLLECTION_OF_RESULTS.append(entry)
+                if entry["MANAGEMENT_IP"] not in IP_LIST:
+                    if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
+                        IP_LIST.append(entry["MANAGEMENT_IP"])
+        ssh.close()
+        if jump_box:
+            jump_box.close()
+    except AttributeError:
+        log.error("An Attribute Error occurred.", exc_info=True)
+    finally:
+        ssh.close()
+        if jump_box:
+            jump_box.close()
 
 
 def send_command(ip, command):
-    if exists(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")):
-        ssh, jump_box, connection = jump_session(ip)
-        if not connection:
-            return None, None, False
-        _, stdout, _ = ssh.exec_command(command)
-        stdout = stdout.read()
-        stdout = stdout.decode("utf-8")
-        with open(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")) as f:
-            re_table = textfsm.TextFSM(f)
-            result = re_table.ParseText(stdout)
-        results = [dict(zip(re_table.header, entry)) for entry in result]
-        ssh.close()
-        jump_box.close()
-        return results
-    else:
+    if not exists(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")):
         log.error(f"The command: '{command}', cannot be found. "
                   "Check the command is correct and make sure the TextFSM file exists for that command.")
         return None
+    else:
+        jump_box = None
+        if jump_server == "None":
+            ssh, connection = direct_session(ip)
+        else:
+            ssh, jump_box, connection = jump_session(ip)
+        if not connection:
+            return None
+        try:
+            _, stdout, _ = ssh.exec_command(command)
+            stdout = stdout.read()
+            stdout = stdout.decode("utf-8")
+            with open(f"./textfsm/cisco_ios_{command}.textfsm".replace(" ", "_")) as f:
+                re_table = textfsm.TextFSM(f)
+                result = re_table.ParseText(stdout)
+            results = [dict(zip(re_table.header, entry)) for entry in result]
+            ssh.close()
+            if jump_box:
+                jump_box.close()
+            return results
+        except Exception as err:
+            log.error("Send_Command function error: An unknwon exception occured:", exc_info=True)
+        finally:
+            ssh.close()
+            if jump_box:
+                jump_box.close()
 
 
 def run_multi_thread(function, iterable):
@@ -345,8 +363,8 @@ def main():
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",
                                                                    "LOCAL_PORT",
-                                                                   "LOCAL SERIAL",
-                                                                   "LOCAL UPTIME",
+                                                                   "LOCAL_SERIAL",
+                                                                   "LOCAL_UPTIME",
                                                                    "DESTINATION_HOST",
                                                                    "REMOTE_PORT",
                                                                    "MANAGEMENT_IP",

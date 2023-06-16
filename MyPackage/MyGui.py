@@ -43,12 +43,6 @@ class MyGUIClass:
         self.password_entry = Entry(self.Site_details, textvariable=self.password_var, show="*")
         self.password_entry.pack(fill='x', expand=True)
 
-        self.alt_password_var = StringVar()
-        self.alt_password_label = Label(self.Site_details, text=f"\n{ALT_USERNAME} Password: (Required)", anchor="w")
-        self.alt_password_label.pack(fill='x', expand=True)
-        self.alt_password_entry = Entry(self.Site_details, textvariable=self.alt_password_var, show="*")
-        self.alt_password_entry.pack(fill='x', expand=True)
-
         self.Retry_Auth_var = StringVar()
         self.Retry_Auth_var.set("Yes")
         self.Retry_Auth_label = Label(self.Site_details,
@@ -60,6 +54,14 @@ class MyGUIClass:
                                        )
         self.Retry_Auth.current(0)
         self.Retry_Auth.pack(fill='x', expand=True)
+        self.alt_password_var = StringVar()
+        self.alt_password_label = Label(
+            self.Site_details,
+            text=f"\n{ALT_USERNAME} Password: (Required if the above is set to yes)", anchor="w")
+        self.alt_password_label.pack(fill='x', expand=True)
+        self.alt_password_entry = Entry(self.Site_details, textvariable=self.alt_password_var, show="*")
+        self.alt_password_entry.pack(fill='x', expand=True)
+
 
         self.IP_Address1_var = StringVar()
         self.IP_Address1_label = Label(self.Site_details, text="\nCore Switch 1: (Required)", anchor="w")
@@ -115,9 +117,6 @@ class MyGUIClass:
                 showerror(f"Error", "Username field is empty\n"
                                     "Please check and try again!")
             elif not self.password_var.get():
-                showerror(f"Error", "Password field is empty\n"
-                                    "Please check and try again!")
-            elif not self.alt_password_var.get():
                 showerror(f"Error", "Password field is empty\n"
                                     "Please check and try again!")
             elif not ipaddress.ip_address(self.IP_Address1_var.get()):

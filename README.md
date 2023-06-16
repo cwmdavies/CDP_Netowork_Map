@@ -14,10 +14,19 @@ Each IP Address is checked to ensure validity.
 
 
 The following information is retrieved from the CDP output and recorded in an Excel sheet for each switch that is logged into:
+ - LOCAL_HOST
+ - LOCAL_IP
  - LOCAL_PORT
- - Required DESTINATION_HOST
+ - LOCAL_SERIAL
+ - LOCAL_UPTIME
+ - DESTINATION_HOST
  - REMOTE_PORT
  - MANAGEMENT_IP
  - PLATFORM
  - SOFTWARE_VERSION
  - CAPABILITIES
+
+
+List of IP Addresses with resolved DNS A records
+List of IP Addresses which failed authentication
+List of IP Addresses which resulted in a connection error

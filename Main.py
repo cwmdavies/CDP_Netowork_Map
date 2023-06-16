@@ -314,7 +314,7 @@ def send_command(ip, command):
                 jump_box.close()
             return results
         except Exception as err:
-            log.error("Send_Command function error: An unknwon exception occured:", exc_info=True)
+            log.error(f"Send_Command function error: An unknown exception occurred: {err}", exc_info=True)
         finally:
             ssh.close()
             if jump_box:

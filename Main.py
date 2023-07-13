@@ -215,10 +215,10 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
                 return ssh, jump_box, connection
             else:
                 AUTHENTICATION_ERRORS.append(ip)
-                return None, None, False
+                return None, False
         else:
             AUTHENTICATION_ERRORS.append(ip)
-            return None, None, False
+            return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",

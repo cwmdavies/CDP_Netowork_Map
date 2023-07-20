@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/venv_Py311" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (CDP_Network_Audit)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

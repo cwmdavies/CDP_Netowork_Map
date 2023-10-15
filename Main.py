@@ -146,7 +146,7 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
                                                            timeout=TIMEOUT, )
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        target.connect(hostname=ip, username=username, password=password, allow_agent=False,look_for_keys=False,
+        target.connect(hostname=ip, username=username, password=password, allow_agent=False, look_for_keys=False,
                        sock=jump_box_channel, timeout=TIMEOUT, auth_timeout=TIMEOUT, banner_timeout=TIMEOUT)
         log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
@@ -203,7 +203,7 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username=username, password=password, allow_agent=False,look_for_keys=False)
+        ssh.connect(hostname=ip, port=22, username=username, password=password, allow_agent=False, look_for_keys=False)
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:

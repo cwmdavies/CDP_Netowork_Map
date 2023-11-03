@@ -49,6 +49,8 @@ MyGui.root.mainloop()
 
 SiteName = MyGui.my_gui.SiteName_var.get()
 jump_server = MyGui.my_gui.JumpServer_var.get()
+JS_USERNAME = MyGui.my_gui.Username_var.get()
+JS_PASSWORD = MyGui.my_gui.password_var.get()
 _USERNAME = MyGui.my_gui.Username_var.get()
 _PASSWORD = MyGui.my_gui.password_var.get()
 _ALT_USER = config_params.Alternative_Credentials["username"]
@@ -109,8 +111,7 @@ def dns_resolve(domain_name) -> None:
         DNS_IP[domain_name] = addr1
         log.info(f"Successfully retrieved DNS 'A' record for hostname: {domain_name}")
     except socket.gaierror:
-        log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}",
-                  exc_info=True)
+        log.error(f"Failed to retrieve DNS A record for hostname: {domain_name}")
         DNS_IP[domain_name] = "DNS Resolution Failed"
     except Exception as Err:
         log.error(f"An unknown error occurred for hostname: {domain_name}, {Err}",
@@ -135,35 +136,27 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
             exc_info=True)
         return None, None, False
     try:
-        log.info(f"Jump Session Function: Trying to establish a connection to: {ip}")
+        log.info(f"Jump Session Function: Trying to establish a connection to: {ip} using the username: {username}")
         jump_box = paramiko.SSHClient()
         jump_box.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        jump_box.connect(jump_server, username=_USERNAME, password=_PASSWORD)
+        jump_box.connect(jump_server, username=JS_USERNAME, password=JS_PASSWORD)
         jump_box_transport = jump_box.get_transport()
         src_address = (LOCAL_IP_ADDRESS, 22)
         destination_address = (ip, 22)
-        jump_box_channel = jump_box_transport.open_channel("direct-tcpip", destination_address, src_address,
-                                                           timeout=TIMEOUT, )
+        jump_box_channel = jump_box_transport.open_channel("direct-tcpip",
+                                                           destination_address,
+                                                           src_address,
+                                                           timeout=TIMEOUT,)
         target = paramiko.SSHClient()
         target.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        target.connect(hostname=ip, username=username, password=password, allow_agent=False,look_for_keys=False,
+        target.connect(hostname=ip, username=username, password=password, allow_agent=False, look_for_keys=False,
                        sock=jump_box_channel, timeout=TIMEOUT, auth_timeout=TIMEOUT, banner_timeout=TIMEOUT)
         log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
         log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ", exc_info=True)
-        if retry == "Yes":
-            if AUTHENTICATION_ERRORS.count(ip) < 3:
-                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-                AUTHENTICATION_ERRORS.append(ip)
-                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
-                return ssh, jump_box, connection
-            else:
-                AUTHENTICATION_ERRORS.append(ip)
-                return None, None, False
-        else:
-            AUTHENTICATION_ERRORS.append(ip)
-            return None, None, False
+        AUTHENTICATION_ERRORS.append(ip)
+        return None, None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
@@ -203,22 +196,12 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username=username, password=password, allow_agent=False,look_for_keys=False)
+        ssh.connect(hostname=ip, port=22, username=username, password=password, allow_agent=False, look_for_keys=False)
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        if retry == "Yes":
-            if AUTHENTICATION_ERRORS.count(ip) < 3:
-                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-                AUTHENTICATION_ERRORS.append(ip)
-                ssh, jump_box, connection = direct_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
-                return ssh, connection
-            else:
-                AUTHENTICATION_ERRORS.append(ip)
-                return None, False
-        else:
-            AUTHENTICATION_ERRORS.append(ip)
-            return None, False
+        AUTHENTICATION_ERRORS.append(ip)
+        return None, False
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
@@ -227,17 +210,15 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         return None, False
     except (ConnectionError, TimeoutError):
         CONNECTION_ERRORS.append(ip)
-        log.error(
-            f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!",
-            exc_info=True
-            )
+        log.error(f"Open Session Function Error: Timeout error occurred for ip Address: {ip}!",
+                  exc_info=True
+                  )
         return None, False
     except Exception as err:
         CONNECTION_ERRORS.append(ip)
-        log.error(
-            f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
-            exc_info=True
-        )
+        log.error(f"Open Session Function Error: Unknown error occurred for ip Address: {ip}!\n{err}",
+                  exc_info=True
+                  )
         return None, False
 
 
@@ -258,7 +239,9 @@ def get_facts(ip) -> "None, appends dictionaries to a global list":
     if not connection:
         return None
     try:
+        log.info(f"Get_Facts Function: Retrieving 'show version' information from {ip}")
         get_version_output = send_command(ip, "show version")
+        log.info(f"Get_Facts Function: Retrieving 'show cdp neighbors' information from {ip}")
         get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
         hostname = get_version_output[0].get("HOSTNAME")
         serial_numbers = get_version_output[0].get("SERIAL")
@@ -356,6 +339,12 @@ def main():
 
     # Start the CDP recursive lookup on the network and save the results.
     run_multi_thread(get_facts, IP_LIST)
+
+    # Retry devices that failed authentication
+    if retry == "Yes":
+        _USERNAME = _ALT_USER
+        _PASSWORD = _ALT_PASSWORD
+        run_multi_thread(get_facts, AUTHENTICATION_ERRORS)
 
     # Resolve DNS A addresses using hostnames
     run_multi_thread(dns_resolve, HOSTNAMES)

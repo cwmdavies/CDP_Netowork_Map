@@ -98,7 +98,7 @@ def ip_check(ip) -> bool:
         return False
 
 
-def dns_resolve(domain_name) -> None:
+def resolve_dns(domain_name) -> None:
     """
     Takes in a domain name and does a DNS lookup on it.
     Saves the information to a dictionary
@@ -347,7 +347,7 @@ def main():
         run_multi_thread(get_facts, AUTHENTICATION_ERRORS)
 
     # Resolve DNS A addresses using hostnames
-    run_multi_thread(dns_resolve, HOSTNAMES)
+    run_multi_thread(resolve_dns, HOSTNAMES)
 
     audit_array = pandas.DataFrame(COLLECTION_OF_RESULTS, columns=["LOCAL_HOST",
                                                                    "LOCAL_IP",

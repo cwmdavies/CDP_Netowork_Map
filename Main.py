@@ -151,19 +151,11 @@ def jump_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session + J
         log.info(f"Jump Session Function: Connection to IP: {ip} established")
         return target, jump_box, True
     except paramiko.ssh_exception.AuthenticationException:
-        log.error(f"Jump Session Function Error: Authentication to IP: {ip} failed! ", exc_info=True)
-        if retry == "Yes":
-            if AUTHENTICATION_ERRORS.count(ip) < 3:
-                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-                AUTHENTICATION_ERRORS.append(ip)
-                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
-                return ssh, jump_box, connection
-            else:
-                AUTHENTICATION_ERRORS.append(ip)
-                return None, None, False
-        else:
-            AUTHENTICATION_ERRORS.append(ip)
-            return None, None, False
+        AUTHENTICATION_ERRORS.append(ip)
+        log.error(f"Open Session Function Error: Unable to authenticate to ip Address: {ip}!",
+                  exc_info=True
+                  )
+        return None, None, "Auth_Error"
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Jump Session Function Error: Unable to connect to IP: {ip}!",
@@ -201,24 +193,18 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         return None, False
     try:
         log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
+        log.info(f"Username: {username}\nPassword: {password}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username=username, password=password, allow_agent=False, look_for_keys=False)
+        ssh.connect(hostname=ip, port=22, username=username, password=password, look_for_keys=False)
         log.info(f"Open Session Function: Connected to ip Address: {ip}")
         return ssh, True
     except paramiko.ssh_exception.AuthenticationException:
-        if retry == "Yes":
-            if AUTHENTICATION_ERRORS.count(ip) < 3:
-                log.info(f"Retrying connection to '{ip}' using alternative credentials.")
-                AUTHENTICATION_ERRORS.append(ip)
-                ssh, jump_box, connection = direct_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
-                return ssh, connection
-            else:
-                AUTHENTICATION_ERRORS.append(ip)
-                return None, False
-        else:
-            AUTHENTICATION_ERRORS.append(ip)
-            return None, False
+        AUTHENTICATION_ERRORS.append(ip)
+        log.error(f"Open Session Function Error: Unable to authenticate to ip Address: {ip}!",
+                  exc_info=True
+                  )
+        return None, "Auth_Error"
     except paramiko.ssh_exception.NoValidConnectionsError:
         CONNECTION_ERRORS.append(ip)
         log.error(f"Open Session Function Error: Unable to connect to ip Address: {ip}!",
@@ -250,42 +236,29 @@ def get_facts(ip) -> "None, appends dictionaries to a global list":
     :param ip: The IP Address you wish to connect to.
     :return: None, appends dictionaries to a global list.
     """
-    jump_box = None
-    if jump_server == "None":
-        ssh, connection = direct_session(ip)
-    else:
-        ssh, jump_box, connection = jump_session(ip)
-    if not connection:
+    get_version_output = send_command(ip, "show version")
+    if not get_version_output:
         return None
-    try:
-        get_version_output = send_command(ip, "show version")
-        get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
-        hostname = get_version_output[0].get("HOSTNAME")
-        serial_numbers = get_version_output[0].get("SERIAL")
-        uptime = get_version_output[0].get("UPTIME")
-        if hostname not in HOSTNAMES:
-            HOSTNAMES.append(hostname)
-            for entry in get_cdp_nei_output:
-                entry["LOCAL_HOST"] = hostname
-                entry["LOCAL_IP"] = ip
-                entry["LOCAL_SERIAL"] = serial_numbers
-                entry["LOCAL_UPTIME"] = uptime
-                text = entry['DESTINATION_HOST']
-                head, sep, tail = text.partition('.')
-                entry['DESTINATION_HOST'] = head.upper()
-                COLLECTION_OF_RESULTS.append(entry)
-                if entry["MANAGEMENT_IP"] not in IP_LIST:
-                    if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
-                        IP_LIST.append(entry["MANAGEMENT_IP"])
-        ssh.close()
-        if jump_box:
-            jump_box.close()
-    except AttributeError:
-        log.error("An Attribute Error occurred.", exc_info=True)
-    finally:
-        ssh.close()
-        if jump_box:
-            jump_box.close()
+    get_cdp_nei_output = send_command(ip, "show cdp neighbors detail")
+    if not get_cdp_nei_output:
+        return None
+    hostname = get_version_output[0].get("HOSTNAME")
+    serial_numbers = get_version_output[0].get("SERIAL")
+    uptime = get_version_output[0].get("UPTIME")
+    if hostname not in HOSTNAMES:
+        HOSTNAMES.append(hostname)
+        for entry in get_cdp_nei_output:
+            entry["LOCAL_HOST"] = hostname
+            entry["LOCAL_IP"] = ip
+            entry["LOCAL_SERIAL"] = serial_numbers
+            entry["LOCAL_UPTIME"] = uptime
+            text = entry['DESTINATION_HOST']
+            head, sep, tail = text.partition('.')
+            entry['DESTINATION_HOST'] = head.upper()
+            COLLECTION_OF_RESULTS.append(entry)
+            if entry["MANAGEMENT_IP"] not in IP_LIST:
+                if 'Switch' in entry['CAPABILITIES'] and "Host" not in entry['CAPABILITIES']:
+                    IP_LIST.append(entry["MANAGEMENT_IP"])
 
 
 def send_command(ip, command):
@@ -297,8 +270,12 @@ def send_command(ip, command):
         jump_box = None
         if jump_server == "None":
             ssh, connection = direct_session(ip)
+            if connection == "Auth_Error":
+                ssh, connection = direct_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
         else:
             ssh, jump_box, connection = jump_session(ip)
+            if connection == "Auth_Error":
+                ssh, jump_box, connection = jump_session(ip, username=_ALT_USER, password=_ALT_PASSWORD)
         if not connection:
             return None
         try:
@@ -315,10 +292,6 @@ def send_command(ip, command):
             return results
         except Exception as err:
             log.error(f"Send_Command function error: An unknown exception occurred: {err}", exc_info=True)
-        finally:
-            ssh.close()
-            if jump_box:
-                jump_box.close()
 
 
 def run_multi_thread(function, iterable):

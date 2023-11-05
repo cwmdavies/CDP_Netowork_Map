@@ -193,7 +193,6 @@ def direct_session(ip, username=_USERNAME, password=_PASSWORD) -> "SSH Session +
         return None, False
     try:
         log.info(f"Open Session Function: Trying to connect to ip Address: {ip}")
-        log.info(f"Username: {username}\nPassword: {password}")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=22, username=username, password=password, look_for_keys=False)
